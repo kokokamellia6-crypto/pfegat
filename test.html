@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Induspacial — Zones Industrielles Alger</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet"/>
+
+<style>
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES — DARK & LIGHT THEMES
+═══════════════════════════════════════════════ */
+:root, [data-theme="dark"] {
+  --bg:       #050d1a;
+  --panel:    #080f1f;
+  --card:     #0c1528;
+  --border:   #1a2d4a;
+  --border2:  #0f2040;
+  --accent:   #00c8ff;
+  --accent2:  #ff6b2b;
+  --gold:     #f0b429;
+  --green:    #00e676;
+  --red:      #ff3d57;
+  --text:     #c8deff;
+  --muted:    #4a6282;
+  --glow:     0 0 20px rgba(0,200,255,0.25);
+  --glow2:    0 0 30px rgba(255,107,43,0.2);
+  --popup-bg: #080f1f;
+  --popup-border: #1a2d4a;
+  --popup-text: #c8deff;
+  --leaflet-filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.8);
+  --scanline-color: rgba(0,0,0,0.03);
+  --toggle-bg: #0c1528;
+  --toggle-border: #1a2d4a;
+}
+
+[data-theme="light"] {
+  --bg:       #f0f4f8;
+  --panel:    #ffffff;
+  --card:     #e8eef6;
+  --border:   #b8ccdf;
+  --border2:  #ccdaeb;
+  --accent:   #005fa3;
+  --accent2:  #c44b00;
+  --gold:     #b58900;
+  --green:    #00875a;
+  --red:      #c0392b;
+  --text:     #1a2d4a;
+  --muted:    #7a93ad;
+  --glow:     0 0 20px rgba(0,95,163,0.15);
+  --glow2:    0 0 30px rgba(196,75,0,0.15);
+  --popup-bg: #ffffff;
+  --popup-border: #b8ccdf;
+  --popup-text: #1a2d4a;
+  --leaflet-filter: none;
+  --scanline-color: rgba(0,0,0,0.015);
+  --toggle-bg: #e8eef6;
+  --toggle-border: #b8ccdf;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: background .3s, color .3s;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:9999; pointer-events:none;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    var(--scanline-color) 2px, var(--scanline-color) 4px
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+header {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  height: 64px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 100;
+  transition: background .3s, border-color .3s;
+}
+header::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg,transparent,var(--accent),transparent);
+  animation: scanh 4s ease-in-out infinite;
+}
+@keyframes scanh { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+.logo-block { display:flex; align-items:center; gap:14px; }
+
+/* MODIFICATION 1 — Logo image replaces shield icon */
+.logo-img {
+  width:46px; height:46px;
+  border-radius:50%;
+  object-fit:cover;
+  flex-shrink:0;
+  border:1.5px solid var(--accent);
+  box-shadow:var(--glow);
+  transition:box-shadow .3s;
+}
+.logo-img:hover { box-shadow:0 0 28px rgba(0,200,255,.6); }
+
+.logo-text { line-height:1; }
+.logo-title {
+  font-family:'Rajdhani',sans-serif;
+  font-size:22px; font-weight:700; letter-spacing:4px;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0,200,255,.4);
+}
+.logo-sub {
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; color: var(--muted); letter-spacing:2px;
+  text-transform:uppercase;
+}
+
+/* MODIFICATION 2 — header-center removed (clock/date) */
+
+.header-right { display:flex; align-items:center; gap:16px; }
+
+.status-dot {
+  width:8px; height:8px; border-radius:50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.theme-toggle {
+  display:flex; align-items:center; gap:8px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--muted); letter-spacing:1px;
+  cursor:pointer;
+}
+.toggle-track {
+  width:44px; height:22px;
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
+  border-radius:11px;
+  position:relative; cursor:pointer;
+  transition: all .3s;
+  flex-shrink:0;
+}
+.toggle-track:hover { border-color: var(--accent); }
+.toggle-thumb {
+  width:16px; height:16px;
+  background: var(--accent);
+  border-radius:50%;
+  position:absolute; top:2px; left:2px;
+  transition: transform .3s, background .3s;
+  box-shadow: 0 0 8px var(--accent);
+}
+[data-theme="light"] .toggle-thumb {
+  transform: translateX(22px);
+  background: var(--accent);
+}
+.toggle-icon-dark, .toggle-icon-light {
+  font-size:14px; transition: opacity .3s;
+}
+[data-theme="light"] .toggle-icon-dark { opacity:.4; }
+[data-theme="dark"] .toggle-icon-light { opacity:.4; }
+
+/* ═══════════════════════════════════════════════
+   TICKER
+═══════════════════════════════════════════════ */
+.ticker-bar {
+  flex-shrink:0;
+  height:28px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border2);
+  overflow:hidden; position:relative;
+}
+.ticker-bar::before, .ticker-bar::after {
+  content:''; position:absolute; top:0; bottom:0; width:60px; z-index:2;
+}
+.ticker-bar::before { left:0; background: linear-gradient(90deg, var(--card), transparent); }
+.ticker-bar::after  { right:0; background: linear-gradient(-90deg, var(--card), transparent); }
+.ticker-inner {
+  display:flex; align-items:center; height:100%;
+  white-space:nowrap;
+  animation: ticker 60s linear infinite;
+  will-change: transform;
+}
+@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+#ticker-text {
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; color:var(--accent); letter-spacing:2px;
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════════ */
+main {
+  flex:1; display:flex; overflow:hidden; position:relative;
+}
+
+/* ═══════════════════════════════════════════════
+   LEFT PANEL
+═══════════════════════════════════════════════ */
+#left-panel {
+  width: 310px; flex-shrink:0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow: hidden;
+  position:relative; z-index:10;
+  transition: background .3s, border-color .3s;
+}
+
+.panel-header {
+  padding:14px 16px 10px;
+  border-bottom: 1px solid var(--border2);
+  background: var(--panel);
+}
+.panel-title {
+  font-family:'Rajdhani',sans-serif;
+  font-size:12px; font-weight:700; letter-spacing:3px;
+  color: var(--accent); text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title::before {
+  content:''; width:3px; height:14px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.zone-summary {
+  display:flex; gap:4px; padding:8px 12px;
+  border-bottom:1px solid var(--border2);
+}
+.zone-badge {
+  flex:1; text-align:center;
+  padding:6px 4px;
+  background: var(--card);
+  border:1px solid var(--border2);
+  cursor:pointer; transition:all .2s;
+}
+.zone-badge:hover, .zone-badge.active {
+  border-color:var(--accent);
+  background:rgba(0,200,255,.08);
+}
+.zone-badge-name {
+  font-family:'Rajdhani',sans-serif;
+  font-size:11px; font-weight:700;
+  color:var(--accent); letter-spacing:1px;
+  display:block;
+}
+.zone-badge-count {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--muted);
+  display:block; margin-top:2px;
+}
+
+.search-wrap { padding: 8px 12px; border-bottom:1px solid var(--border2); }
+.search-box {
+  width:100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px; padding:8px 12px;
+  outline:none; letter-spacing:1px;
+  transition: border-color .3s;
+}
+.search-box::placeholder { color:var(--muted); }
+.search-box:focus { border-color:var(--accent); box-shadow: var(--glow); }
+
+.filters {
+  padding: 6px 12px; display:flex; flex-wrap:wrap; gap:4px;
+  border-bottom:1px solid var(--border2);
+  max-height:80px; overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.chip {
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px; letter-spacing:1px; padding:2px 7px;
+  border:1px solid var(--border); color:var(--muted);
+  background:transparent; cursor:pointer;
+  transition: all .2s;
+  clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+  white-space:nowrap;
+}
+.chip.active, .chip:hover {
+  background: rgba(0,200,255,.1);
+  border-color:var(--accent); color:var(--accent);
+}
+
+#zone-list {
+  flex:1; overflow-y:auto; padding:8px;
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+#zone-list::-webkit-scrollbar { width:4px; }
+#zone-list::-webkit-scrollbar-thumb { background:var(--border); }
+
+.zone-item {
+  padding: 9px 12px; margin-bottom:5px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--item-color, var(--accent));
+  cursor:pointer; position:relative; overflow:hidden;
+  transition: all .2s;
+  animation: fadeInLeft .3s ease both;
+}
+@keyframes fadeInLeft { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+.zone-item:hover {
+  background: rgba(0,200,255,.05);
+  border-color: var(--item-color, var(--accent));
+  transform: translateX(3px);
+}
+.zone-item.active {
+  background: rgba(0,200,255,.08);
+  border-color: var(--accent);
+}
+.zi-top { display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+.zi-id {
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px; color:var(--muted); flex-shrink:0;
+}
+.zi-name {
+  font-family:'Rajdhani',sans-serif;
+  font-size:12px; font-weight:600; color:var(--text); line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.zi-bottom { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.zi-commune {
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px; color:var(--muted);
+}
+.zi-activity {
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px; color:var(--muted);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:120px;
+}
+.zi-statut {
+  font-family:'Share Tech Mono',monospace;
+  font-size:7px; padding:1px 5px;
+  border-radius:0; margin-left:auto; flex-shrink:0;
+  clip-path: polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%);
+}
+
+/* ═══════════════════════════════════════════════
+   MAP
+═══════════════════════════════════════════════ */
+#map-wrap {
+  flex:1; position:relative;
+}
+#map {
+  width:100%; height:100%;
+  background: var(--bg);
+}
+[data-theme="light"] #map .leaflet-tile-pane {
+  filter: var(--leaflet-filter);
+}
+
+#map-wrap::before, #map-wrap::after,
+#map-frame-bl, #map-frame-br {
+  content:''; position:absolute; z-index:20; pointer-events:none;
+  width:30px; height:30px;
+  border-color: var(--accent); border-style:solid;
+}
+#map-wrap::before { top:10px; left:10px; border-width:2px 0 0 2px; }
+#map-wrap::after  { top:10px; right:10px; border-width:2px 2px 0 0; }
+#map-frame-bl { bottom:10px; left:10px; border-width:0 0 2px 2px; }
+#map-frame-br { bottom:10px; right:10px; border-width:0 2px 2px 0; }
+
+#coords {
+  position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  z-index:20; pointer-events:none;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; color:var(--accent);
+  background: rgba(5,13,26,.85);
+  border: 1px solid var(--border);
+  padding:4px 14px; letter-spacing:2px;
+  backdrop-filter: blur(4px);
+  transition: all .3s;
+}
+[data-theme="light"] #coords {
+  background: rgba(240,244,248,.9);
+  color: var(--accent);
+}
+
+#map-legend {
+  position:absolute; top:14px; right:14px; z-index:20;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding:12px 14px; min-width:180px;
+  backdrop-filter:blur(8px);
+  transition: all .3s;
+}
+.leg-title {
+  font-family:'Rajdhani',sans-serif;
+  font-size:11px; font-weight:700;
+  color:var(--accent); letter-spacing:2px;
+  text-transform:uppercase; margin-bottom:8px;
+  border-bottom:1px solid var(--border2); padding-bottom:6px;
+}
+.leg-item {
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:5px; cursor:pointer;
+  transition: opacity .2s;
+}
+.leg-item:hover { opacity:.7; }
+.leg-dot {
+  width:10px; height:10px; flex-shrink:0; border-radius:50%;
+}
+.leg-label {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--text); letter-spacing:.5px;
+}
+
+/* MODIFICATION 3 — Type Legend (Production / Distribution) */
+#type-legend {
+  position:absolute; bottom:42px; right:14px; z-index:20;
+  background:var(--panel); border:1px solid var(--border);
+  padding:10px 14px; min-width:180px;
+  backdrop-filter:blur(8px); transition:all .3s;
+}
+.type-leg-title {
+  font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700;
+  color:var(--accent2); letter-spacing:2px; text-transform:uppercase;
+  margin-bottom:8px; border-bottom:1px solid var(--border2); padding-bottom:6px;
+}
+.type-leg-item {
+  display:flex; align-items:center; gap:8px; margin-bottom:5px;
+}
+.type-leg-icon { font-size:14px; width:20px; text-align:center; flex-shrink:0; }
+.type-leg-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  color:var(--text); letter-spacing:.5px; line-height:1.4;
+}
+.type-leg-sub {
+  font-family:'Share Tech Mono',monospace; font-size:8px;
+  color:var(--muted); display:block;
+}
+
+#scan-line {
+  position:absolute; z-index:15; pointer-events:none;
+  left:0; right:0; height:2px;
+  background: linear-gradient(90deg,transparent,rgba(0,200,255,.4),transparent);
+  animation: scanv 6s linear infinite;
+  top:0;
+}
+@keyframes scanv {
+  0%   { top:-2px; opacity:0; }
+  5%   { opacity:1; }
+  95%  { opacity:1; }
+  100% { top:100%; opacity:0; }
+}
+
+/* ═══════════════════════════════════════════════
+   RIGHT PANEL
+═══════════════════════════════════════════════ */
+#right-panel {
+  width: 300px; flex-shrink:0;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow:hidden; z-index:10;
+  transition: background .3s, border-color .3s;
+}
+
+#detail-card {
+  flex:1; padding:14px;
+  overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+#detail-card::-webkit-scrollbar { width:4px; }
+#detail-card::-webkit-scrollbar-thumb { background:var(--border); }
+
+.detail-placeholder {
+  height:100%; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; gap:12px;
+  color:var(--muted);
+}
+.detail-placeholder .ph-icon {
+  font-size:48px; opacity:.3;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.detail-placeholder p {
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  line-height:1.8;
+}
+
+.detail-zone-name {
+  font-family:'Rajdhani',sans-serif;
+  font-size:18px; font-weight:800;
+  color:var(--text); line-height:1.2; margin-bottom:3px;
+}
+.detail-zone-type {
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px; letter-spacing:2px;
+  color: var(--type-color, var(--accent));
+  text-transform:uppercase; margin-bottom:10px;
+}
+.detail-divider {
+  height:1px; margin:10px 0;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+.detail-row {
+  display:flex; justify-content:space-between;
+  align-items:flex-start; margin-bottom:6px;
+  gap:8px;
+}
+.detail-key {
+  font-family:'Share Tech Mono',monospace;
+  font-size:8px; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase;
+  flex-shrink:0; padding-top:2px; min-width:80px;
+}
+.detail-val {
+  font-family:'Exo 2',sans-serif;
+  font-size:11px; color:var(--text);
+  text-align:right; line-height:1.4;
+  word-break:break-word;
+}
+.detail-val.highlight {
+  font-family:'Rajdhani',sans-serif;
+  font-size:16px; font-weight:700;
+  color:var(--accent);
+  text-shadow: 0 0 10px rgba(0,200,255,.3);
+}
+.detail-val a {
+  color:var(--accent); text-decoration:none;
+}
+.detail-val a:hover { text-decoration:underline; }
+
+.statut-badge {
+  display:inline-block;
+  font-family:'Rajdhani',sans-serif;
+  font-size:11px; font-weight:700; letter-spacing:2px;
+  padding:2px 12px;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+}
+.detail-desc {
+  font-size:11px; color:var(--muted);
+  line-height:1.7; margin-top:6px;
+  padding:10px;
+  background:var(--card);
+  border-left:2px solid var(--accent);
+  word-break:break-word;
+}
+
+.chart-wrap {
+  flex-shrink:0; padding:12px 14px;
+  border-top:1px solid var(--border2);
+}
+.chart-title {
+  font-family:'Rajdhani',sans-serif;
+  font-size:10px; font-weight:700; letter-spacing:2px;
+  color:var(--accent); text-transform:uppercase; margin-bottom:8px;
+}
+canvas#radarCanvas { width:100%; display:block; }
+
+/* ═══════════════════════════════════════════════
+   PROGRESS / TOAST
+═══════════════════════════════════════════════ */
+#toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  z-index:10000;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px; letter-spacing:2px;
+  padding:10px 24px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color:var(--accent);
+  opacity:0; transition: opacity .3s;
+  pointer-events:none;
+  backdrop-filter:blur(8px);
+  clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+}
+#toast.show { opacity:1; }
+
+/* ═══════════════════════════════════════════════
+   LEAFLET POPUP STYLE
+═══════════════════════════════════════════════ */
+.leaflet-popup-content-wrapper {
+  background: var(--popup-bg) !important;
+  border: 1px solid var(--popup-border) !important;
+  border-radius:0 !important;
+  box-shadow: 0 0 20px rgba(0,200,255,.2) !important;
+  color: var(--popup-text) !important;
+  transition: all .3s;
+}
+.leaflet-popup-tip { background: var(--popup-border) !important; }
+.leaflet-popup-content { margin:12px 16px !important; }
+.popup-name {
+  font-family:'Rajdhani',sans-serif;
+  font-size:15px; font-weight:700; color:var(--text);
+  line-height:1.3; margin-bottom:3px;
+}
+.popup-type {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; letter-spacing:1.5px;
+  margin-bottom:8px; text-transform:uppercase;
+}
+.popup-stat {
+  display:flex; justify-content:space-between;
+  gap:12px; margin-bottom:3px;
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+}
+.popup-stat-k { color:var(--muted); }
+.popup-stat-v { color:var(--text); text-align:right; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.pulse-ring {
+  position:absolute; inset:-6px; border-radius:50%;
+  border:1.5px solid var(--ring-color, rgba(0,200,255,.5));
+  animation: pulseRing var(--ring-dur, 2.5s) ease-out infinite;
+}
+@keyframes pulseRing {
+  0%{transform:scale(.8);opacity:1}
+  100%{transform:scale(1.6);opacity:0}
+}
+
+#loading {
+  position:fixed; inset:0; z-index:50000;
+  background: var(--bg);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px;
+}
+.load-title {
+  font-family:'Rajdhani',sans-serif; font-size:32px; font-weight:700;
+  letter-spacing:8px; color:var(--accent);
+  text-shadow:0 0 30px var(--accent);
+}
+.load-bar-wrap {
+  width:280px; height:3px;
+  background:var(--border);
+}
+.load-bar-fill {
+  height:100%; width:0%;
+  background:var(--accent);
+  transition:width .3s;
+  box-shadow:0 0 10px var(--accent);
+}
+.load-text {
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; color:var(--muted); letter-spacing:2px;
+}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading">
+  <div class="load-title">INDUSPACIAL</div>
+  <div class="load-bar-wrap"><div class="load-bar-fill" id="load-fill"></div></div>
+  <div class="load-text" id="load-text">INITIALISATION...</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-block">
+    <!-- MODIFICATION 1: Logo image replaces shield emoji -->
+    <img src="data:image/png;base64,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" alt="InduSpatial" class="logo-img"/>
+    <div class="logo-text">
+      <div class="logo-title">INDUSPACIAL</div>
+      <div class="logo-sub">Zones Industrielles · Wilaya d'Alger</div>
+    </div>
+  </div>
+
+  <!-- MODIFICATION 2: header-center (clock/date) removed -->
+
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">OPÉRATIONNEL</span>
+
+    <!-- Dark/Light toggle -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="toggle-icon-dark">🌙</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="toggle-icon-light">☀️</span>
+    </div>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-inner">
+    <span id="ticker-text">INDUSPACIAL · CHARGEMENT EN COURS...</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div class="panel-header">
+      <div class="panel-title">Répertoire Industriel</div>
+    </div>
+
+    <!-- Zone badges -->
+    <div class="zone-summary">
+      <div class="zone-badge active" id="badge-all" onclick="setZoneFilter(this,'all')">
+        <span class="zone-badge-name">TOUTES</span>
+        <span class="zone-badge-count" id="cnt-all">—</span>
+      </div>
+      <div class="zone-badge" id="badge-rouiba" onclick="setZoneFilter(this,'Rouiba')">
+        <span class="zone-badge-name">ROUIBA</span>
+        <span class="zone-badge-count" id="cnt-rouiba">—</span>
+      </div>
+      <div class="zone-badge" id="badge-reghaia" onclick="setZoneFilter(this,'Reghaia')">
+        <span class="zone-badge-name">REGHAÏA</span>
+        <span class="zone-badge-count" id="cnt-reghaia">—</span>
+      </div>
+      <div class="zone-badge" id="badge-ouedSmar" onclick="setZoneFilter(this,'Oued Smar')">
+        <span class="zone-badge-name">O. SMAR</span>
+        <span class="zone-badge-count" id="cnt-ouedSmar">—</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <input class="search-box" id="search" type="text" placeholder="⌕ RECHERCHER UNE UNITÉ..." oninput="renderList()"/>
+    </div>
+
+    <!-- Activity filters -->
+    <div class="filters" id="filter-chips"></div>
+
+    <!-- List -->
+    <div id="zone-list"></div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="map-frame-bl"></div>
+    <div id="map-frame-br"></div>
+    <div id="scan-line"></div>
+    <div id="coords">36.7200° N · 3.1000° E · ALGER, ALGÉRIE</div>
+    <!-- Existing zone legend (unchanged) -->
+    <div id="map-legend">
+      <div class="leg-title">▸ ZONES</div>
+      <div id="legend-items"></div>
+    </div>
+    <!-- MODIFICATION 3: Type legend (Production / Distribution) -->
+    <div id="type-legend">
+      <div class="type-leg-title">▸ TYPE D'UNITÉ</div>
+      <div class="type-leg-item">
+        <div class="type-leg-icon">🏭</div>
+        <div class="type-leg-label">Unité de Production
+          <span class="type-leg-sub">Fabrication · Transformation</span>
+        </div>
+      </div>
+      <div class="type-leg-item">
+        <div class="type-leg-icon">📦</div>
+        <div class="type-leg-label">Unité de Distribution
+          <span class="type-leg-sub">Commerce · Logistique · Négoce</span>
+        </div>
+      </div>
+      <div class="type-leg-item">
+        <div class="type-leg-icon">🏢</div>
+        <div class="type-leg-label">Services &amp; Autres
+          <span class="type-leg-sub">Services · Études · Admin.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div class="panel-header">
+      <div class="panel-title">Fiche Détaillée</div>
+    </div>
+    <div id="detail-card">
+      <div class="detail-placeholder">
+        <div class="ph-icon">🏭</div>
+        <p>SÉLECTIONNER UNE UNITÉ<br>POUR AFFICHER<br>SES DONNÉES</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+<script>
+const RAW_DATA = [
+{"id":"ZI-001","nom":"ABC PEPSI","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"Production des boissons gazeuses (Soda)","affectation":"Cession","annee":1999,"superficie":55366,"employes":800,"adresse":"RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73697,"lng":3.29252,"contact":""},
+{"id":"ZI-002","nom":"AGLO Béton","zone":"Rouiba","commune":"Rouiba","nature":"Privé","forme":"EURL","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Fabrication Agglos creux","affectation":"","annee":null,"superficie":18526,"employes":35,"adresse":"Rouiba","lat":null,"lng":null,"dms":"36°42'59.24\"N-3°17'38.38\"E","contact":""},
+{"id":"ZI-003","nom":"BOUABDELLAH MOHAMED EL AMINE ex AIRELEC SITE 1","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"","statut":"Participant / actif","branche":"","activite":"","affectation":"Cession","annee":null,"superficie":6000,"employes":null,"adresse":"","lat":36.73634,"lng":3.30851,"contact":""},
+{"id":"ZI-004","nom":"Batterie Scet Energie Rouiba","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Energie","activite":"IMPORT / EXPORT MATERIELS D'ENERGIE","affectation":"Cession","annee":null,"superficie":4531,"employes":34,"adresse":"ZONE INDUSTRIELLE ROUIBA","lat":36.71906,"lng":3.28794,"contact":"0661 92 64 64"},
+{"id":"ZI-005","nom":"C.C.C YAICI EX ICOPLAST","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Services aux entreprises","activite":"Services aux entreprises","affectation":"Cession","annee":null,"superficie":1895,"employes":null,"adresse":"ZONE INDUSTRIELLE ROUIBA VOIE H","lat":36.72292,"lng":3.3085,"contact":""},
+{"id":"ZI-006","nom":"CAN HYGIENE SPA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Bois-Papier-Carton-Imprimerie","activite":"TRANSFORMATION INDUSTRIELLE DU PAPIER","affectation":"Cession","annee":null,"superficie":13990,"employes":308,"adresse":"HAOUCHE SBAAT NORD ZI ROUIBA","lat":36.72308,"lng":3.29624,"contact":""},
+{"id":"ZI-007","nom":"DEKOREX SITE II","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En instance","branche":"Plastique-Caoutchouc","activite":"TRANSFORMATION DE PLASTIQUE","affectation":"Cession","annee":null,"superficie":1500,"employes":null,"adresse":"VOIE C ZONE INDUSTRIELLE ROUIBA","lat":36.72485,"lng":3.30849,"contact":""},
+{"id":"ZI-009","nom":"EPE / SPA POVAL","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"Fabrication et commercialisation des pompes hydrauliques","affectation":"Cession","annee":2007,"superficie":1611,"employes":null,"adresse":"RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73693,"lng":3.30158,"contact":""},
+{"id":"ZI-010","nom":"EPE / SPA SNVI UCVR","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Mécanique-Electromécanique","activite":"VENTE VEHICULES NEUFS INDUSTRIELS","affectation":"Cession","annee":null,"superficie":157583,"employes":70,"adresse":"BP/153 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73148,"lng":3.30445,"contact":"+213 (23) 85 91 91"},
+{"id":"ZI-011","nom":"EPE / SPA SNVI UCAV","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Mécanique-Electromécanique","activite":"Mécanique / Électromécanique","affectation":"","annee":null,"superficie":80000,"employes":195,"adresse":"BP/22 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.72617,"lng":3.32154,"contact":""},
+{"id":"ZI-012","nom":"EPE /SPA UNITE V.I.R FILIALE SNVI","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Mécanique-Electromécanique","activite":"Conception et fabrication de vehicules industriels","affectation":"Cession","annee":2011,"superficie":615343,"employes":2182,"adresse":"BP/23 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73696,"lng":3.30908,"contact":""},
+{"id":"ZI-013","nom":"EPE /SPA UNITE C.I.R FILIALE SNVI","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Mécanique-Electromécanique","activite":"REALISATION DES PRODUITS CARROSSERIES","affectation":"Cession","annee":2011,"superficie":103106,"employes":673,"adresse":"BP/143 VOIE C ZONE INDUSTRIELLE ROUIBA","lat":36.72641,"lng":3.31308,"contact":""},
+{"id":"ZI-014","nom":"EPE ALRECC EX OLA CONSTRUCTION","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"CONSTRUCTION ET ANNEXES","affectation":"Cession","annee":null,"superficie":24733,"employes":2559,"adresse":"Haouche Sebate nord zi Rouiba","lat":36.72389,"lng":3.29364,"contact":""},
+{"id":"ZI-016","nom":"EPE SPA BATIMETAL","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"FABRICATION ET MONTAGE DES STRUCTURES METALLIQUE","affectation":"Cession","annee":null,"superficie":18000,"employes":null,"adresse":"RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73723,"lng":3.29987,"contact":""},
+{"id":"ZI-017","nom":"EPE SPA DIVINDUS AMM UNITE MOBSCO","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"Fabrication et commercialisation de mobilier","affectation":"Cession","annee":2001,"superficie":12428,"employes":165,"adresse":"BP 21 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73692,"lng":3.30078,"contact":""},
+{"id":"ZI-018","nom":"EPE SPA DIVINDUS MCM EX CAMMO","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Bois-Papier-Carton-Imprimerie","activite":"Mobilier de bureau","affectation":"Cession","annee":null,"superficie":27875,"employes":444,"adresse":"BP N°18 ROUIBA","lat":36.73515,"lng":3.30203,"contact":"023851313"},
+{"id":"ZI-019","nom":"EPE/SPA ACS SPA","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Transports-Logistique","activite":"PORT SEC","affectation":"Cession","annee":1997,"superficie":39752,"employes":87,"adresse":"BP N°166 ZONE INDUSTRIELLE ROUIBA","lat":36.72188,"lng":3.29998,"contact":""},
+{"id":"ZI-020","nom":"EPE/SPA SAIEG SITE 1","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"FABRICATION ET COMMERCIALISATION DES PRODUITS D'ECLAIRAGE PUBLIQUE","affectation":"Cession","annee":null,"superficie":125454,"employes":306,"adresse":"BP N°10 ZONE INDUSTRIELLE ROUIBA","lat":36.72012,"lng":3.31222,"contact":""},
+{"id":"ZI-021","nom":"EPE/SPA ACGS CHEZ LOGITRANS","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Services aux entreprises","activite":"Service logistique et extraportuaire","affectation":"Cession","annee":1998,"superficie":63750,"employes":2401,"adresse":"BP / 242 ZONE INDUSTRIELLE ROUIBA","lat":36.72638,"lng":3.29916,"contact":""},
+{"id":"ZI-022","nom":"EPE/SPA ALGERIENNE DU CUIR ET DERIVES","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Textile-Confection-Habillement-Chaussure","activite":"TRAITEMENT DES PEAUX BRUTES OVINES ET CAPRINES","affectation":"Cession","annee":null,"superficie":68258,"employes":148,"adresse":"BP/59 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73675,"lng":3.29519,"contact":""},
+{"id":"ZI-023","nom":"EPE/SPA ANEP IMPRIMERIE ROUIBA","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Bois-Papier-Carton-Imprimerie","activite":"IMPRIMERIE","affectation":"Cession","annee":1960,"superficie":5000,"employes":160,"adresse":"RN N°5 ZONE INDUSTRIELLE ROUIBA","lat":36.7373,"lng":3.30327,"contact":""},
+{"id":"ZI-024","nom":"EPE/SPA ANEP ZONE B","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Pharmédical/Pharmacie","activite":"Pharmacie / médical","affectation":"Cession","annee":null,"superficie":4018,"employes":null,"adresse":"50, RUE KHELIFA BOUKHALFA-ALGER","lat":36.72214,"lng":3.31242,"contact":""},
+{"id":"ZI-025","nom":"EPE/SPA BATICIM","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En justice","branche":"BTPH-Matériaux de construction-ginie civile","activite":"FABRICATION ET GALVANISATION DE STRUCTURES METALLIQUES","affectation":"Cession","annee":2007,"superficie":46125,"employes":395,"adresse":"BP/65 ZONE INDUSTRIELLE ROUIBA","lat":36.72021,"lng":3.30148,"contact":""},
+{"id":"ZI-026","nom":"EPE/SPA COSIDER ALREM","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"RENOVATION ET MAINTENANCE DES MATERIELS","affectation":"Cession","annee":null,"superficie":23971,"employes":573,"adresse":"LOT N°03 BP N°156 VOIE C ZONE INDUSTRIELLE ROUIBA","lat":36.72333,"lng":3.29535,"contact":""},
+{"id":"ZI-027","nom":"EPE/SPA COSIDER OUVRAGE D'ART","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"TRAVAUX PUBLIC","affectation":"Cession","annee":null,"superficie":3225,"employes":201,"adresse":"BP N°67/B ZONE INDUSTRIELLE ROUIBA","lat":36.7245,"lng":3.29555,"contact":""},
+{"id":"ZI-028","nom":"EPE/SPA COSIDER T.P","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"CHAUDRONNERIE. CHARPENTE METALIQUE","affectation":"Cession","annee":null,"superficie":18189,"employes":160,"adresse":"BP N°66 ZONE INDUSTRIELLE ROUIBA","lat":36.72834,"lng":3.29412,"contact":""},
+{"id":"ZI-030","nom":"EPE/SPA CPA SITE 2","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Banque / Assurance","activite":"Banque / Assurance","affectation":"Cession","annee":null,"superficie":5192,"employes":null,"adresse":"Zone Industrielle Rouiba","lat":36.71947,"lng":3.30739,"contact":""},
+{"id":"ZI-031","nom":"EPE/SPA EFORHYD","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"EPE/SPA","statut":"En activité","branche":"Hydraulique","activite":"forage hydraulique","affectation":"Cession","annee":null,"superficie":14215,"employes":392,"adresse":"HAOUCHE SBEAAT NORD N°155 SECTION 7 ZI ROUIBA","lat":36.71851,"lng":3.30852,"contact":""},
+{"id":"ZI-032","nom":"EPE/SPA ENAD SHYMECA U/LAMES","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"Production","affectation":"Cession","annee":null,"superficie":2875,"employes":null,"adresse":"IMPASSE VOIE B BP 151 ZONE INDUSTRIELLE ROUIBA","lat":36.73694,"lng":3.29936,"contact":""},
+{"id":"ZI-033","nom":"EPE/SPA ENAD SHYMECA U.COSMETIQUE","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"Production des produits cosmetiques","affectation":"Cession","annee":1999,"superficie":49632,"employes":71,"adresse":"BP 16 ZONE INDUSTRIELLE ROUIBA","lat":36.73505,"lng":3.30545,"contact":""},
+{"id":"ZI-035","nom":"EPE/SPA ENROS","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Réalisation d'ouvrages souterrains","affectation":"Cession","annee":null,"superficie":52687,"employes":344,"adresse":"BP N°77 ZONE INDUSTRIELLE ROUIBA","lat":36.71954,"lng":3.31497,"contact":""},
+{"id":"ZI-037","nom":"EPE/SPA HYDRO-AMENAGEMENT DCR","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Hydraulique","activite":"AMENAGEMENTS HYDRAULIQUES TRANSFERTS D'EAU","affectation":"Cession","annee":2001,"superficie":26875,"employes":null,"adresse":"BP N°31 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73725,"lng":3.29738,"contact":""},
+{"id":"ZI-038","nom":"EPE/SPA HYDRO-AMENAGEMENT U.BETON","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Hydraulique","activite":"Production de tuyaux en beton","affectation":"Cession","annee":1985,"superficie":131823,"employes":null,"adresse":"LOT N°31 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.72836,"lng":3.29161,"contact":""},
+{"id":"ZI-039","nom":"EPE/SPA HYDRO-TECHNIQUE","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Hydraulique","activite":"Réparation et maintenance","affectation":"Cession","annee":null,"superficie":52125,"employes":136,"adresse":"IMPASSE VOIE B ZONE INDUSTRIELLE ROUIBA","lat":36.73563,"lng":3.29879,"contact":""},
+{"id":"ZI-040","nom":"EPE/SPA INFRAFER","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"REALISATIONS DES INFRASTRUCTURES","affectation":"Cession","annee":null,"superficie":190263,"employes":null,"adresse":"15 RUE COLONEL AMIROUCHE BP 208 ZONE INDUSTRIELLE ROUIBA","lat":36.72146,"lng":3.29158,"contact":""},
+{"id":"ZI-041","nom":"EPE/SPA LAITERIE DE ROUIBA","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"Production de lait","affectation":"Cession","annee":null,"superficie":40000,"employes":null,"adresse":"Zone Industrielle Rouiba","lat":36.72366,"lng":3.2886,"contact":""},
+{"id":"ZI-042","nom":"EPE/SPA LAITERIE FROMAGERIE DE BOUDOUAOU","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"PRODUCTION LAIT","affectation":"Cession","annee":null,"superficie":7000,"employes":72,"adresse":"ZONE INDUSTRIELLE ROUIBA","lat":36.72068,"lng":3.30572,"contact":""},
+{"id":"ZI-043","nom":"EPE/SPA NAFTAL GPL/ROUIBA","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"COMMERCIALISATION ET DISTRIBUTIONS DE PRODUITS PETROLIERS","affectation":"Cession","annee":2007,"superficie":28413,"employes":22,"adresse":"LOT N°233 SECTION 07 N°170 ZONE C","lat":36.72063,"lng":3.30037,"contact":"213 21 38 33 70"},
+{"id":"ZI-044","nom":"EPE/SPA RAIL LOGISTIC","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Transports-Logistique","activite":"ENTREPOSAGE","affectation":"Cession","annee":null,"superficie":84000,"employes":90,"adresse":"ZONE INDUSTRIELLE ROUIBA","lat":36.72993,"lng":3.29339,"contact":""},
+{"id":"ZI-045","nom":"EPE/SPA REELEC","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Études et conseils","activite":"Etude et réalisation élèctrique","affectation":"Cession","annee":null,"superficie":6150,"employes":269,"adresse":"RUE MOHAMED KACI BP 08 BABA HASSAN","lat":36.73576,"lng":3.30476,"contact":""},
+{"id":"ZI-046","nom":"EPE/SPA RTC LOC","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Transports-Logistique","activite":"SERVICE","affectation":"Cession","annee":null,"superficie":55783,"employes":null,"adresse":"GARE MARCHANDISES ROUIBA","lat":36.73034,"lng":3.30066,"contact":""},
+{"id":"ZI-047","nom":"EPE/SPA SAIEG SITE 2","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"EPE/SPA","statut":"En activité","branche":"Électronique-Électricité","activite":"Site pour stockage materiel","affectation":"Cession","annee":1998,"superficie":11500,"employes":null,"adresse":"BP N°10 zone industrielle Rouiba","lat":36.73582,"lng":3.30185,"contact":"+213 238640 89"},
+{"id":"ZI-048","nom":"EPE/SPA SIDAL","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"PRODUCTION GAZ INDUSTRIELLE","affectation":"Cession","annee":null,"superficie":15881,"employes":35,"adresse":"LOTS N°05 N°91 ZONE INDUSTRIELLE ROUIBA","lat":36.73499,"lng":3.33019,"contact":""},
+{"id":"ZI-049","nom":"EPE/SPA SNRV EX ENR ERC URD","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"RECUPERATION ET COMMERCIALISATION DES METAUX","affectation":"Cession","annee":1977,"superficie":148426,"employes":276,"adresse":"BP/235 VOIE B ZONE INDUSTRIELLE ROUIBA","lat":36.73519,"lng":3.2999,"contact":"+213 (0) 23 53 41 77"},
+{"id":"ZI-050","nom":"EPE/SPA SNTF GARE MARCHANDISE","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Transports-Logistique","activite":"Maintenance","affectation":"Cession","annee":null,"superficie":128000,"employes":null,"adresse":"Zone Industrielle Rouiba","lat":36.72493,"lng":3.29043,"contact":""},
+{"id":"ZI-052","nom":"EPE/SPA SONELGAZ SERVICE RTG","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"Travaux en élèctricité et gaz","affectation":"Cession","annee":2024,"superficie":30000,"employes":200,"adresse":"BP/37 SECTION 07 S/Z C Rouiba","lat":36.71844,"lng":3.30223,"contact":""},
+{"id":"ZI-053","nom":"EPE/SPA SONELGAZ SERVICE SYSTEM SITE C","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"Charpente metallique, baraquement, bois, et alluminium","affectation":"Cession","annee":2022,"superficie":9673,"employes":200,"adresse":"BP 311 ZONE INDUSTRIELLE ROUIBA","lat":36.72127,"lng":3.30187,"contact":""},
+{"id":"ZI-054","nom":"EPE/SPA TRECYPLAST FILIALE ENPC","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"COMMERCIALISATION ET TRANSFORMATION DES PRODUITS PLASTIQUES","affectation":"Cession","annee":2002,"superficie":38607,"employes":104,"adresse":"BP N°154 ZONE INDUSTRIELLE ROUIBA","lat":36.73514,"lng":3.33716,"contact":"0770 02 52 83"},
+{"id":"ZI-055","nom":"EPIC/EDIV UCAV","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"EPIC","statut":"En activité","branche":"Mécanique-Electromécanique","activite":"Service après vente","affectation":"Cession","annee":null,"superficie":386280,"employes":null,"adresse":"Zone Industrielle Rouiba","lat":36.72974,"lng":3.31476,"contact":""},
+{"id":"ZI-056","nom":"ETS CAFE LES SPHINX KARROUR","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"ETS","statut":"En activité","branche":"Agro-alimentaire","activite":"TORREFACTION DE CAFE","affectation":"Cession","annee":null,"superficie":2000,"employes":15,"adresse":"BP N°56 ZONE INDUSTRIELLE ROUIBA VOIE H","lat":36.72324,"lng":3.30828,"contact":""},
+{"id":"ZI-057","nom":"EURL ARCODYM","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"EURL","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"FABRICATION ET COMMERCIALISATION D'APPAREILS ELECTRIQUES","affectation":"Cession","annee":null,"superficie":1000,"employes":null,"adresse":"SECTION 07 LOT N°100 ZONE B ZONE INDUSTRIELLE ROUIBA","lat":36.72453,"lng":3.3085,"contact":""},
+{"id":"ZI-058","nom":"EURL CAPAP MANSOURI","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"EURL","statut":"","branche":"Bois-Papier-Carton-Imprimerie","activite":"PAPIER ET ARTICLES DIVERTS EN PAPIER","affectation":"","annee":null,"superficie":2000,"employes":null,"adresse":"BP N°135 ZONE INDUSTRIELLE ROUIBA","lat":36.721131,"lng":3.312639,"contact":""},
+{"id":"ZI-061","nom":"EURL CMTM","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"EURL","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"IMPORTATION, CONDITIONNEMENT ET COMMERCIALISATION DES PRODUITS ALIMENTAIRES","affectation":"Cession","annee":null,"superficie":6000,"employes":null,"adresse":"VOIE C N°203 ZONE INDUSTRIELLE ROUIBA","lat":36.72827,"lng":3.29693,"contact":""},
+{"id":"ZI-062","nom":"EURL EDMCR","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"EURL","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"TREFILAGE. SOUDAGE","affectation":"Cession","annee":null,"superficie":3800,"employes":11,"adresse":"BP 37 ZONE INDUSTRIELLE ROUIBA","lat":36.72473,"lng":3.31088,"contact":""},
+{"id":"ZI-063","nom":"EURL GAEA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"EURL","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Travaux de construction de charpente métalique","affectation":"Cession","annee":null,"superficie":20275,"employes":36,"adresse":"ZONE INDUSTRIELLE ZONE B ROUIBA SECTION 07 LOT N°145","lat":36.71971,"lng":3.30378,"contact":""},
+{"id":"ZI-064","nom":"EURL INDAGRO ALIMENTARIA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"EURL","statut":"En activité","branche":"Agro-alimentaire","activite":"Transformation de produits agricoles","affectation":"Concession","annee":null,"superficie":11858,"employes":null,"adresse":"HAOUCHE SBAAT ROUIBA","lat":36.72093,"lng":3.28739,"contact":""},
+{"id":"ZI-066","nom":"FAIENCERIE ALGERIENNE SITE 1","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Industrie","activite":"Production dalle de sol et faiencerie","affectation":"Cession","annee":1995,"superficie":36650,"employes":318,"adresse":"LOT N°07 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.72447,"lng":3.30383,"contact":""},
+{"id":"ZI-067","nom":"FAIENCERIE ALGERIENNE SITE II","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"PRODUCTION DE CARREAUX CERAMIQUE","affectation":"Cession","annee":null,"superficie":5261,"employes":110,"adresse":"LOT N°07 ZONE INDUSTRIELLE ROUIBA","lat":36.72102,"lng":3.31332,"contact":""},
+{"id":"ZI-068","nom":"FRERES TOUALI STEEL","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"Autres","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"Commerce métaux","affectation":"Cession","annee":null,"superficie":4144,"employes":null,"adresse":"HAOUHE SBAAT NORD LOT N°120 ZONE INDUSTRIELLE ROUIBA","lat":36.72245,"lng":3.3085,"contact":""},
+{"id":"ZI-069","nom":"GENCOPHARMA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Chimie-Parachimie","activite":"Production des produits chimique pharmaceutique","affectation":"Cession","annee":null,"superficie":1839,"employes":null,"adresse":"Zone Industrielle Rouiba","lat":36.72397,"lng":3.29873,"contact":""},
+{"id":"ZI-070","nom":"HB TECHNOLOGIE EX CENTREMBALLE","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Informatique-Télécoms","activite":"FABRICATION DE CARTE MAGNETIQUES","affectation":"Cession","annee":null,"superficie":6000,"employes":64,"adresse":"ZONE INDUSTRIELLE ROUIBA","lat":36.72105,"lng":3.293,"contact":""},
+{"id":"ZI-072","nom":"IFFCO FOOD STUFFS SPA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"PRODUCTION DES PRODUITS AGROALIMENTAIRE","affectation":"Cession","annee":null,"superficie":1993,"employes":51,"adresse":"HAOUCHE SECTION 07/31 ZONE INDUSTRIELLE ROUIBA","lat":36.72361,"lng":3.29766,"contact":""},
+{"id":"ZI-074","nom":"L.A.D Pharma sarl","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Pharmédical/Pharmacie","activite":"FABRICATION DE MEDICAMENTS","affectation":"Cession","annee":null,"superficie":5028,"employes":265,"adresse":"LOT N°113 SOUS ZONE B ZONE INDUSTRIELLE ROUIBA","lat":36.72621,"lng":3.30963,"contact":""},
+{"id":"ZI-076","nom":"LU ALGERIE","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"PRODUCTION BISCUITERIE","affectation":"Cession","annee":null,"superficie":27000,"employes":400,"adresse":"ROUTE NATIONALE N°05 ZONE INDUSTRIELLE REGHAIA","lat":36.73744,"lng":3.32524,"contact":""},
+{"id":"ZI-079","nom":"NCA ROUIBA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"Production boisson nectar de jus de fruits","affectation":"Cession","annee":2000,"superficie":12625,"employes":443,"adresse":"RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73746,"lng":3.30348,"contact":""},
+{"id":"ZI-080","nom":"NCA ROUIBA SPA","zone":"Rouiba","commune":"Rouiba","nature":"Public","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"PRODUCTION BOISSONS NECTAR ET JUS DE FRUIT","affectation":"Cession","annee":2015,"superficie":12375,"employes":550,"adresse":"HAOUCHE SBAAT NORD / RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73528,"lng":3.3041,"contact":""},
+{"id":"ZI-083","nom":"SARL IMC ZONE C","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Pharmédical/Pharmacie","activite":"FABRICATION DE DISPOSITIFS MEDICAUX ET MEDICAMENTS","affectation":"Cession","annee":1998,"superficie":41614,"employes":1200,"adresse":"BP N°26 VOIE A ZONE INDUSTRIELLE ROUIBA","lat":36.72412,"lng":3.30148,"contact":""},
+{"id":"ZI-118","nom":"SARL GENERIC-LAB et SOALIM","zone":"Rouiba","commune":"Rouiba","nature":"Privé","forme":"SARL","statut":"En activité","branche":"Pharmédical/Pharmacie","activite":"PRODUCTION DE MEDICAMENTS","affectation":"Cession","annee":1989,"superficie":10761,"employes":240,"adresse":"BP N°73 VOIE C ZONE INDUSTRIELLE ROUIBA","lat":36.72443,"lng":3.30156,"contact":""},
+{"id":"ZI-159","nom":"SARL SAAC","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Energie","activite":"FABRICATION DE BATTERIES DE DEMARRAGE","affectation":"Cession","annee":null,"superficie":38344,"employes":120,"adresse":"BP N°127 ZONE INDUSTRIELLE ROUIBA","lat":36.71865,"lng":3.30779,"contact":""},
+{"id":"ZI-173","nom":"SARL TANGO","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Agro-alimentaire","activite":"Production de bière","affectation":"Cession","annee":1999,"superficie":37793,"employes":304,"adresse":"LOT N°07 RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73689,"lng":3.2912,"contact":""},
+{"id":"ZI-192","nom":"SPA FRUITAL II COCA-COLA","zone":"Rouiba","commune":"Rouiba","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Agro-alimentaire","activite":"PRODUCTION ET VENTE BOISSONS NON ALCOOLISEES","affectation":"Concession","annee":2016,"superficie":45244,"employes":null,"adresse":"RN N°05 ZONE INDUSTRIELLE ROUIBA","lat":36.73722,"lng":3.32898,"contact":""},
+{"id":"ZI-212","nom":"ABBAD DAHBIA ET CST","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"","statut":"En activité","branche":"Services aux entreprises","activite":"Services","affectation":"Cession","annee":1999,"superficie":1000,"employes":null,"adresse":"Zone Industrielle Reghaia","lat":36.72107,"lng":3.33084,"contact":""},
+{"id":"ZI-213","nom":"Aldiph Direction Générale","zone":"Reghaia","commune":"Reghaia","nature":"étatique","forme":"SPA","statut":"","branche":"administration / management","activite":"travaux portuaires, le dragage et les infrastructures hydrauliques","affectation":"","annee":1999,"superficie":70200,"employes":300,"adresse":"zone industriel bp 26, Réghaïa 16036","lat":36.730683,"lng":3.327831,"contact":""},
+{"id":"ZI-214","nom":"BENKACI EX EDIPAL","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"","statut":"Actif","branche":"Plastique-Caoutchouc","activite":"Transformation du plastique","affectation":"Cession","annee":null,"superficie":1938,"employes":null,"adresse":"Zone Industrielle Reghaia","lat":36.73326,"lng":3.34001,"contact":""},
+{"id":"ZI-215","nom":"BIOPHARM LOGISTIC SPA","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Services aux entreprises","activite":"Prestation de service","affectation":"Cession","annee":1998,"superficie":19813,"employes":11,"adresse":"18 RUE DE LA ZONE INDUSTRIELLE REGHAIA","lat":36.73457,"lng":3.34155,"contact":""},
+{"id":"ZI-216","nom":"BISMA distribution","zone":"Reghaia","commune":"Reghaia","nature":"Privé","forme":"SARL","statut":"","branche":"Commerce et distribution","activite":"Distribution de produits alimentaires","affectation":"","annee":null,"superficie":5318,"employes":30,"adresse":"16000, Réghaïa","lat":36.720789,"lng":3.329414,"contact":""},
+{"id":"ZI-217","nom":"BLIKAZ ABDEL-ALI","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"Autres","statut":"En activité","branche":"Services aux entreprises","activite":"Services","affectation":"Cession","annee":null,"superficie":11298,"employes":null,"adresse":"N°LOT 86 SECTION 06 ZONE REGHAIA","lat":36.72072,"lng":3.32697,"contact":""},
+{"id":"ZI-218","nom":"BTK AFRICA SARL","zone":"Reghaia","commune":"Reghaia","nature":"Privé","forme":"SARL","statut":"","branche":"Commerce et services industriels","activite":"Fabrication de remorques et semi-remorques","affectation":"","annee":2003,"superficie":3036,"employes":7,"adresse":"13 route de, Meftah","lat":36.721031,"lng":3.326431,"contact":""},
+{"id":"ZI-220","nom":"ENAG Réghaïa","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"","branche":"Industrie graphique / papier – édition","activite":"Impression, édition et distribution de livres","affectation":"","annee":1983,"superficie":77397,"employes":439,"adresse":"BP 75, Zone Industrielle Réghaia","lat":36.725475,"lng":3.330239,"contact":"contact@enag.dz"},
+{"id":"ZI-221","nom":"ENAP","zone":"Reghaia","commune":"Reghaia","nature":"étatique","forme":"SPA","statut":"","branche":"Industrie chimique","activite":"Production industrielle de peintures, vernis, résines, émulsions","affectation":"","annee":1982,"superficie":25920,"employes":null,"adresse":"Réghaïa","lat":36.724111,"lng":3.325581,"contact":""},
+{"id":"ZI-222","nom":"EPE ENGOA SPA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Études et conseils","activite":"ETUDES ET REALISATION DES OUVRAGES D'ART","affectation":"Cession","annee":1993,"superficie":33875,"employes":3537,"adresse":"BP 142 RN N°05 ZONE INDUSTRIELLE REGHAIA","lat":36.73802,"lng":3.3319,"contact":""},
+{"id":"ZI-223","nom":"EPE / GROUPE ANABIB / SPA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"SIEGE DU GROUPE ANABIB DG","affectation":"Cession","annee":2007,"superficie":28137,"employes":20,"adresse":"ROUTE DE LA GARE BP N°131 ZONE INDUSTRIELLE REGHAIA","lat":36.72272,"lng":3.31793,"contact":""},
+{"id":"ZI-224","nom":"EPE / SPA EMACAL","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"PRODUCTION DE MATERIAUX DE CONSTRUCTION","affectation":"Concession","annee":null,"superficie":30000,"employes":111,"adresse":"BP N°31/4 ZONE INDUSTRIELLE REGHAIA","lat":36.72162,"lng":3.32593,"contact":""},
+{"id":"ZI-225","nom":"EPE /SPA ENAG","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Bois-Papier-Carton-Imprimerie","activite":"IMPRIMERIE INDUSTRIELLE","affectation":"Cession","annee":1989,"superficie":107750,"employes":408,"adresse":"BP N°75 ZONE INDUSTRIELLE REGHAIA","lat":36.72548,"lng":3.33018,"contact":""},
+{"id":"ZI-227","nom":"EPE /SPA ENAB","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"Bois et derivés de bois","affectation":"Cession","annee":1983,"superficie":145761,"employes":53,"adresse":"ZONE INDUSTRIELLE VOIE C BP N°43 REGHAIA","lat":36.73279,"lng":3.33047,"contact":""},
+{"id":"ZI-228","nom":"EPE /SPA UNITE F.O.R FILIALE SNVI","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Mécanique-Electromécanique","activite":"PRODUCTION DE PIECES BRUTES DE FONDERIE","affectation":"Cession","annee":2011,"superficie":626000,"employes":643,"adresse":"VOIE C BP 104 zone industrielle rouiba","lat":36.72946,"lng":3.32419,"contact":""},
+{"id":"ZI-229","nom":"EPE ANABIB SPA UNITE ALTUMET","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"FABRICATION DES TUBES ACIERS SOUDES","affectation":"Cession","annee":2001,"superficie":50063,"employes":425,"adresse":"BP 11 RN N°05 ZONE INDUSTRIELLE REGHAIA","lat":36.73794,"lng":3.32712,"contact":""},
+{"id":"ZI-230","nom":"EPE ANABIB SPA UNITE PAF","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"FABRICATION DE TUBES EN ACIER","affectation":"Cession","annee":2007,"superficie":151331,"employes":245,"adresse":"lot N°82 /BP N°131 ZONE INDUSTRIELLE REGHAIA","lat":36.73473,"lng":3.33448,"contact":""},
+{"id":"ZI-231","nom":"EPE ANABIB SPA UNITE PTS","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"FABRICATION DE TUBES SOUDES","affectation":"Cession","annee":null,"superficie":85754,"employes":221,"adresse":"RN N°05 BP N°13 ZONE INDUSTRIELLE REGHAIA","lat":36.73666,"lng":3.33586,"contact":""},
+{"id":"ZI-232","nom":"EPE MAGI SPA ZONE B","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"FABRICATION MATERIELS INDUSTRIELS","affectation":"Cession","annee":null,"superficie":28978,"employes":309,"adresse":"BP N°52 ZONE INDUSTRIELLE REGHAIA","lat":36.72103,"lng":3.31638,"contact":""},
+{"id":"ZI-233","nom":"EPE SONATRO SPA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Réalisation d'aerodromes et d'autoroutes","affectation":"Cession","annee":1972,"superficie":92875,"employes":845,"adresse":"BP N°26 ZONE INDUSTRIELLE REGHAIA","lat":36.73167,"lng":3.33111,"contact":""},
+{"id":"ZI-234","nom":"EPE SPA MEDITRAM","zone":"Reghaia","commune":"Reghaia","nature":"étatique","forme":"SPA","statut":"","branche":"Bâtiment et Travaux Publics (BTP)","activite":"Travaux maritimes et portuaires","affectation":"","annee":1970,"superficie":12370,"employes":null,"adresse":"Réghaïa","lat":36.725267,"lng":3.318456,"contact":""},
+{"id":"ZI-235","nom":"EPE/SPA INFRATELE SPA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Informatique-Télécommunication et infrastructure","activite":"Prestation de services","affectation":"Cession","annee":2007,"superficie":44313,"employes":372,"adresse":"LOT N°05 SECTION 06 ZONE INDUSTRIELLE REGHAIA","lat":36.72203,"lng":3.3312,"contact":""},
+{"id":"ZI-236","nom":"EPE/SPA SAPTA SPA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Études et conseils","activite":"ETUDES REALISATION ET RENOVATION D'OUVRAGE D'ART","affectation":"Cession","annee":null,"superficie":88496,"employes":350,"adresse":"BP N°230 ZONE INDUSTRIELLE ROUIBA VOIE C","lat":36.72485,"lng":3.31383,"contact":""},
+{"id":"ZI-237","nom":"EPE/SPA ALRECC E.B.A / DL REGHAIA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Réalisation et construction en batiment","affectation":"Cession","annee":1995,"superficie":57072,"employes":812,"adresse":"BP N°01 ZONE INDUSTRIELLE ROUIBA","lat":36.72183,"lng":3.32146,"contact":""},
+{"id":"ZI-238","nom":"EPE/SPA ENAP EX SODIPEINT","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"APPROVISIONNEMENTS ET VENTE DE PEINTURES","affectation":"Cession","annee":2017,"superficie":24577,"employes":190,"adresse":"BP N°179 CARREFOUR EL-ALIA ALGER","lat":36.72398,"lng":3.32549,"contact":"+213 (0) 26 70 46 39"},
+{"id":"ZI-239","nom":"EPE/SPA ENGTP","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"Autres","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"CONSTRUCTION DES INSTALLATIONS INDUSTRIELS DESTINEES A LA PRODUCTION ET DISTRIBUTION DES HYDROCARBURES","affectation":"Cession","annee":1972,"superficie":92512,"employes":11159,"adresse":"BP 09 ZONE INDUSTRIELLE REGHAIA","lat":36.72799,"lng":3.33129,"contact":""},
+{"id":"ZI-240","nom":"EPE/SPA ENSP / D.F.T","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"FABRICATION OUTILS DE FORAGE","affectation":"Cession","annee":2001,"superficie":8938,"employes":133,"adresse":"BP 109 ZONE INDUSTRIELLE REGHAIA","lat":36.73183,"lng":3.32824,"contact":""},
+{"id":"ZI-241","nom":"EPE/SPA ENTPL TREFAL REGHAIA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"","branche":"Commerce-Négoce-Distribution","activite":"LA PRODUCTION ET COMMERCIALISATION DE TREILLI SOUDES ET POUTRELLES","affectation":"","annee":2009,"superficie":91575,"employes":184,"adresse":"RN N°05 BP N°01 ZONE INDUSTRIELLE REGHAIA","lat":36.732331,"lng":3.328831,"contact":""},
+{"id":"ZI-242","nom":"EPE/SPA LINDE GAS ALGERIE SPA","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"Production et commercialisation du gaz industriel","affectation":"Cession","annee":2008,"superficie":41865,"employes":150,"adresse":"ZONE INDUSTRIEL REGHAIA","lat":36.73279,"lng":3.33047,"contact":""},
+{"id":"ZI-243","nom":"EPE/SPA MEDITRAM /UM","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"BTPH-Matériaux de construction-ginie civile","activite":"TRAVAUX PUBLIQUES","affectation":"Cession","annee":2008,"superficie":70577,"employes":849,"adresse":"BP 143 VOIE C ZONE INDUSTRIELLE REGHAIA","lat":36.72516,"lng":3.31841,"contact":""},
+{"id":"ZI-247","nom":"EURL CAPAP MANSOURI (Reghaia)","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"EURL","statut":"En activité","branche":"Bois-Papier-Carton-Imprimerie","activite":"PAPIER ET ARTICLES DIVERTS EN PAPIER","affectation":"Cession","annee":null,"superficie":2000,"employes":null,"adresse":"BP N°135 ZONE INDUSTRIELLE ROUIBA","lat":36.72113,"lng":3.31264,"contact":"0770 90 91 64"},
+{"id":"ZI-248","nom":"Entreprise Nationale de Grands Travaux Pétroliers","zone":"Reghaia","commune":"Reghaia","nature":"étatique","forme":"spa","statut":"","branche":"Hydrocarbures / industrie pétrolière","activite":"Construction industrielle & pétrolière, génie civil, pipelines","affectation":"","annee":1980,"superficie":81608,"employes":1000,"adresse":"BP09 Zone industrielle, Réghaia – Alger","lat":36.728047,"lng":3.331358,"contact":""},
+{"id":"ZI-249","nom":"FNGOA","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"","branche":"Industrie chimique","activite":"Fabrication de produits chimiques industriels","affectation":"","annee":1983,"superficie":34724,"employes":2500,"adresse":"Z.I, Réghaïa","lat":36.738022,"lng":3.332139,"contact":""},
+{"id":"ZI-254","nom":"INNOVEX Machines","zone":"Reghaia","commune":"Reghaia","nature":"Privé","forme":"SPA","statut":"","branche":"Industrie mécanique et équipements industriels","activite":"Fourniture de machines industrielles","affectation":"","annee":2012,"superficie":9461,"employes":15,"adresse":"06 GP50 ZI Réghaïa 16108","lat":36.719586,"lng":3.324514,"contact":""},
+{"id":"ZI-256","nom":"LABORATOIRE LGPA/BOUKARI (Reghaia)","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Pharmédical/Pharmacie","activite":"DISTRIBUTION DE PRODUITS PHARMACEUTIQUES","affectation":"Cession","annee":null,"superficie":2700,"employes":103,"adresse":"ROUTE DE LA GARE ZONE INDUSTRIELLE REGHAIA","lat":36.73337,"lng":3.34067,"contact":"(+213) 23 85 06 32"},
+{"id":"ZI-258","nom":"LU Algerie (Reghaia)","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SPA","statut":"","branche":"Industrie agroalimentaire","activite":"production et commercialisation de biscuits","affectation":"","annee":2005,"superficie":25228,"employes":450,"adresse":"RN 5, Réghaïa","lat":36.737517,"lng":3.325311,"contact":"023 85 92 39"},
+{"id":"ZI-262","nom":"ROYAL SPA","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"PRODUCTION ET DISTRIBUTION DE BOISSON GAZEUSE ET JUS","affectation":"Cession","annee":2004,"superficie":11438,"employes":135,"adresse":"ROUTE DE LA GARE VOIE D ZONE INDUSTRIELLE REGHAIA","lat":36.73239,"lng":3.33833,"contact":""},
+{"id":"ZI-263","nom":"SARL ALPHAPET","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Plastique-Caoutchouc","activite":"FABRICATION DES BOUCHONS EN PLASTIQUE","affectation":"Cession","annee":null,"superficie":8645,"employes":40,"adresse":"16, VOIE C ZONE INDUSTRIELLE REGHAIA","lat":36.72553,"lng":3.32008,"contact":""},
+{"id":"ZI-265","nom":"SARL ALREST EX NEWREST ALGERIE","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Hôtellerie /Restauration","activite":"Traiteur (CATERING)","affectation":"Cession","annee":2018,"superficie":960,"employes":289,"adresse":"ZONE INDUSTRIELLE REGHAIA","lat":36.72112,"lng":3.33103,"contact":""},
+{"id":"ZI-270","nom":"SARL CIMA MATERIEL AUTOMOBILE","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Transports-Logistique","activite":"TRANSPORT DE VOYAGEURS","affectation":"Concession","annee":null,"superficie":27978,"employes":null,"adresse":"RUE EMIR ABDELKADER REGHAIA","lat":36.72602,"lng":3.32661,"contact":"+213 560 89 35 72"},
+{"id":"ZI-273","nom":"SARL EPBR","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"EURL","statut":"En activité","branche":"Agro-alimentaire","activite":"Production des boissons gazeuses et aromes","affectation":"Cession","annee":2002,"superficie":16385,"employes":28,"adresse":"RN N°05 ZONE INDUSTRIELLE REGHAIA","lat":36.73809,"lng":3.32848,"contact":""},
+{"id":"ZI-275","nom":"SARL GMS","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"Importation de la pièce détachée véhicule","affectation":"Cession","annee":2010,"superficie":12536,"employes":25,"adresse":"ZONE INDUSTRIELLE REGHAIA","lat":36.72076,"lng":3.33318,"contact":""},
+{"id":"ZI-289","nom":"SARL RAMY MILK","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Agro-alimentaire","activite":"STOCKAGE PRODUITS","affectation":"Cession","annee":null,"superficie":6400,"employes":140,"adresse":"LOT N°132 ROUTE DE LA GARE RUE D ZONE INDUSTRIELLE REGHAIA","lat":36.73274,"lng":3.33946,"contact":"023 85 01 85"},
+{"id":"ZI-299","nom":"SARL SOGEMC","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SARL","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"COMMERCIALISATION","affectation":"","annee":null,"superficie":12366,"employes":40,"adresse":"Réghaïa","lat":36.73396,"lng":3.33812,"contact":"023 85 10 41"},
+{"id":"ZI-302","nom":"SARL TERCO","zone":"Reghaia","commune":"Reghaia","nature":"privé","forme":"SARL","statut":"","branche":"Industrie mécanique et métallurgique","activite":"fabrication métallique (chaudronnerie) et le stockage","affectation":"","annee":1999,"superficie":25920,"employes":35,"adresse":"Réghaïa","lat":36.726264,"lng":3.327681,"contact":""},
+{"id":"ZI-308","nom":"SONATRO","zone":"Reghaia","commune":"Reghaia","nature":"Étatique","forme":"SPA","statut":"","branche":"Bâtiment et Travaux Publics (BTP)","activite":"Travaux publics (routes, autoroutes, aérodromes)","affectation":"","annee":1968,"superficie":16325,"employes":1000,"adresse":"zone industriel BP 26, Réghaïa","lat":36.731694,"lng":3.331128,"contact":""},
+{"id":"ZI-309","nom":"SPA / HENKEL ALGERIE","zone":"Reghaia","commune":"Reghaia","nature":"Privée","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"FABRICATION ET COMMERCIALISATION DES DETREGENTS LIQUIDES","affectation":"Cession","annee":2005,"superficie":76125,"employes":null,"adresse":"RN N°05 BP N°01 ZONE INDUSTRIELLE REGHAIA","lat":36.73792,"lng":3.32284,"contact":""},
+{"id":"ZI-315","nom":"SPA/SONELGAZ STG (STOS)","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Energie","activite":"PARC LOGISTIQUE ET MAINTENANCE","affectation":"Cession","annee":null,"superficie":44270,"employes":null,"adresse":"VOIE D IMPASSE ANABIB ZONE INDUSTRIELLE REGHAIA","lat":36.73461,"lng":3.33967,"contact":"021 28 85 33"},
+{"id":"ZI-316","nom":"Sidal Gas","zone":"Reghaia","commune":"Reghaia","nature":"privé","forme":"SARL","statut":"","branche":"Energie","activite":"production, conditionnement et commercialisation des Gaz Industriels et Médicaux","affectation":"","annee":1975,"superficie":14773,"employes":60,"adresse":"Réghaïa","lat":36.735011,"lng":3.330236,"contact":""},
+{"id":"ZI-317","nom":"Sider el hadjar - Dépôt Reghaia","zone":"Reghaia","commune":"Reghaia","nature":"Public","forme":"SPA","statut":"En activité","branche":"Commerce-Négoce-Distribution","activite":"COMMERCIALE","affectation":"Cession","annee":1999,"superficie":137407,"employes":18,"adresse":"ZONE INDUSTRIELLE REGHAIA","lat":36.73196,"lng":3.33217,"contact":"023 96 52 09"},
+{"id":"ZI-318","nom":"TDT EMR Spa","zone":"Reghaia","commune":"Reghaia","nature":"étatique","forme":"SPA","statut":"","branche":"BTP / génie civil spécialisé ou électromécanique","activite":"Télécommunications et réseaux","affectation":"","annee":null,"superficie":28803,"employes":300,"adresse":"Route de la gare BP.118","lat":36.733228,"lng":3.336242,"contact":""},
+{"id":"ZI-320","nom":"Unité EPEAR - REGHAIA - AGRODIV","zone":"Reghaia","commune":"Reghaia","nature":"étatique","forme":"EPE / SPA","statut":"","branche":"Agroalimentaire","activite":"transformation et stockage des céréales","affectation":"","annee":null,"superficie":45632,"employes":200,"adresse":"Réghaïa","lat":36.737864,"lng":3.3307,"contact":""},
+{"id":"ZI-323","nom":"3D Distribution","zone":"Oued Smar","commune":"Oued Smar","nature":"privé","forme":"","statut":"","branche":"Distribution matériel industriel et BTP","activite":"Distribution de matériel industriel et BTP","affectation":"","annee":null,"superficie":3434,"employes":null,"adresse":"Oued Smar","lat":36.701239,"lng":3.193067,"contact":"023 92 02 97"},
+{"id":"ZI-326","nom":"Abri Plast","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Plastique-Caoutchouc","activite":"fabrication de tubes et tuyauteries en PPR-C","affectation":"","annee":2017,"superficie":7596,"employes":null,"adresse":"Route de Meftah N°66 Zone Industrielle Oued Smar","lat":36.696961,"lng":3.168053,"contact":"0661 983 912"},
+{"id":"ZI-328","nom":"Agrolaitier","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Agro-alimentaire","activite":"Industrie agroalimentaire (laitière)","affectation":"","annee":2008,"superficie":1640,"employes":null,"adresse":"Oued Smar","lat":36.709583,"lng":3.202392,"contact":"0793 12 95 96"},
+{"id":"ZI-331","nom":"Arômes d'Algérie","zone":"Oued Smar","commune":"Oued Smar","nature":"Privé","forme":"Privé","statut":"","branche":"Industrie chimique","activite":"Fabrication d'arômes","affectation":"","annee":1978,"superficie":1576,"employes":null,"adresse":"Oued Smar","lat":36.695858,"lng":3.170514,"contact":"0560 95 97 36"},
+{"id":"ZI-335","nom":"Chryso","zone":"Oued Smar","commune":"Oued Smar","nature":"Privé","forme":"Privé","statut":"","branche":"Chimie-Parachimie","activite":"Fabrication d'adjuvants pour bétons","affectation":"","annee":2014,"superficie":40602,"employes":null,"adresse":"Oued Smar","lat":36.698253,"lng":3.187547,"contact":"023 93 03 00"},
+{"id":"ZI-337","nom":"Cosider S54","zone":"Oued Smar","commune":"Oued Smar","nature":"public","forme":"public","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Travaux publics (BTP), Génie civil","affectation":"","annee":1979,"superficie":4133,"employes":null,"adresse":"Oued Smar","lat":36.704289,"lng":3.194644,"contact":""},
+{"id":"ZI-338","nom":"DISTRIBUTION MACHINERY - DM ALGERIA","zone":"Oued Smar","commune":"Oued Smar","nature":"privé","forme":"","statut":"","branche":"Commerce-Négoce-Distribution","activite":"Distribution de machines et équipements industriels","affectation":"","annee":null,"superficie":2400,"employes":null,"adresse":"Zone Industrielle de Oued Smar, N°11 rue Seniri, BP150","lat":36.701758,"lng":3.168811,"contact":"0770 11 81 23"},
+{"id":"ZI-340","nom":"EN.G.C.B / U.LOG","zone":"Oued Smar","commune":"Oued Smar","nature":"publique","forme":"","statut":"","branche":"Transports-Logistique","activite":"Logistique / distribution","affectation":"","annee":1983,"superficie":7367,"employes":null,"adresse":"Voie N°14 Zone Industrielle Oued Smar","lat":36.703908,"lng":3.184433,"contact":""},
+{"id":"ZI-341","nom":"ENAP DEPOT / TRANSIT","zone":"Oued Smar","commune":"Oued Smar","nature":"publique","forme":"","statut":"","branche":"Commerce-Négoce-Distribution","activite":"Dépôt / transit","affectation":"","annee":1982,"superficie":7694,"employes":null,"adresse":"Oued Smar","lat":36.701756,"lng":3.183503,"contact":""},
+{"id":"ZI-342","nom":"ENASEL Centre de distribution","zone":"Oued Smar","commune":"Oued Smar","nature":"public","forme":"","statut":"","branche":"Commerce-Négoce-Distribution","activite":"Centre de distribution de sels","affectation":"","annee":1983,"superficie":5945,"employes":null,"adresse":"Oued Smar","lat":36.699,"lng":3.173147,"contact":""},
+{"id":"ZI-344","nom":"EPE DIVINDUS AMM Unite LITMOD","zone":"Oued Smar","commune":"Oued Smar","nature":"EPE SPA","forme":"EPE SPA","statut":"","branche":"Bois-Papier-Carton-Imprimerie","activite":"Production de lits, de matelas et de meubles connexes","affectation":"","annee":2016,"superficie":8127,"employes":null,"adresse":"14, Route de Meftah, Zone Industrielle Oued Smar","lat":36.702322,"lng":3.172422,"contact":""},
+{"id":"ZI-346","nom":"EURL EPSILON AUTOMOTIVE","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Mécanique-Electromécanique","activite":"fabrication / assemblage de pièces automobiles","affectation":"","annee":null,"superficie":2534,"employes":null,"adresse":"Chemin de wilaya N11, Oued Smar","lat":36.695833,"lng":3.178369,"contact":"0559 59 59 69"},
+{"id":"ZI-348","nom":"Entreprise Nationale Des Peintures","zone":"Oued Smar","commune":"Oued Smar","nature":"étatique","forme":"étatique","statut":"","branche":"Chimie-Parachimie","activite":"Fabrication de peintures, vernis, produits de revêtement","affectation":"","annee":1982,"superficie":3849,"employes":null,"adresse":"Oued Smar","lat":36.701225,"lng":3.167108,"contact":""},
+{"id":"ZI-349","nom":"FILTRANS SPA terminal à conteneurs","zone":"Oued Smar","commune":"Oued Smar","nature":"public","forme":"","statut":"","branche":"Transports-Logistique","activite":"Transport / distribution","affectation":"","annee":1994,"superficie":89345,"employes":null,"adresse":"Oued Smar","lat":36.7014,"lng":3.1763,"contact":"023 92 97 22"},
+{"id":"ZI-350","nom":"Foton El Djazair Motors","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Commerce-Négoce-Distribution","activite":"Importation de véhicules utilitaires et camions Foton","affectation":"","annee":1996,"superficie":1426,"employes":null,"adresse":"Oued Smar","lat":36.705908,"lng":3.198578,"contact":""},
+{"id":"ZI-352","nom":"GCB Gare des radeurs","zone":"Oued Smar","commune":"Oued Smar","nature":"SPA","forme":"SPA","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Génie civil, canalisations, terrassement","affectation":"","annee":1981,"superficie":55585,"employes":null,"adresse":"Oued Smar","lat":36.701139,"lng":3.191911,"contact":""},
+{"id":"ZI-353","nom":"GCB MGX","zone":"Oued Smar","commune":"Oued Smar","nature":"public","forme":"public","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"construction d'infrastructures, montage industriel","affectation":"","annee":1983,"superficie":11320,"employes":null,"adresse":"Oued Smar","lat":36.703561,"lng":3.184922,"contact":""},
+{"id":"ZI-355","nom":"GCB _DTM","zone":"Oued Smar","commune":"Oued Smar","nature":"public","forme":"public","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Travaux de canalisation, pose de pipelines","affectation":"","annee":1981,"superficie":14271,"employes":null,"adresse":"Oued Smar","lat":36.702733,"lng":3.182953,"contact":""},
+{"id":"ZI-357","nom":"GFT-Global Freight Transit","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Transports-Logistique","activite":"Transit, dédouanement, transport international","affectation":"","annee":1993,"superficie":7360,"employes":null,"adresse":"Zone industrielle, Lot 191, Voie 09, Oued Smar","lat":36.697475,"lng":3.166572,"contact":""},
+{"id":"ZI-358","nom":"GHARDAIA FLACONS SHOWROOM","zone":"Oued Smar","commune":"Oued Smar","nature":"SARL","forme":"SARL","statut":"","branche":"Plastique-Caoutchouc","activite":"Production et commerce d'emballages plastiques","affectation":"","annee":2002,"superficie":5096,"employes":null,"adresse":"Lot N°135, ZI, Oued Smar","lat":36.696814,"lng":3.177242,"contact":""},
+{"id":"ZI-359","nom":"GROUPE rahmoune","zone":"Oued Smar","commune":"Oued Smar","nature":"SARL","forme":"SARL","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Production et distribution de matériaux de construction","affectation":"","annee":2010,"superficie":20204,"employes":null,"adresse":"Oued Smar","lat":36.701497,"lng":3.173278,"contact":""},
+{"id":"ZI-361","nom":"Hyundai Motor Algérie","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Commerce-Négoce-Distribution","activite":"importation et distribution de véhicules Hyundai","affectation":"","annee":1997,"superficie":38318,"employes":null,"adresse":"BP 60 Zone industrielle, Oued Smar","lat":36.707417,"lng":3.197406,"contact":""},
+{"id":"ZI-365","nom":"LAFARGE BETON OUED SMAR","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"fabrication et commercialisation de béton prêt à l'emploi","affectation":"","annee":1883,"superficie":18481,"employes":null,"adresse":"Oued Smar","lat":36.701661,"lng":3.164511,"contact":""},
+{"id":"ZI-366","nom":"Laboratoires Merinal Distribution","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"","statut":"","branche":"Pharmédical/Pharmacie","activite":"Pharmaceutique (distribution et logistique médicale)","affectation":"","annee":1997,"superficie":357,"employes":null,"adresse":"Oued Smar","lat":36.6984,"lng":3.177203,"contact":""},
+{"id":"ZI-367","nom":"Legrand oued smar","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Électronique-Électricité","activite":"Fabrication et distribution de matériel électrique","affectation":"","annee":2007,"superficie":3841,"employes":null,"adresse":"Oued Smar","lat":36.697069,"lng":3.179456,"contact":""},
+{"id":"ZI-368","nom":"MERINAL nouveau","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Pharmédical/Pharmacie","activite":"fabrication et production de médicaments","affectation":"","annee":null,"superficie":3625,"employes":null,"adresse":"Oued Smar","lat":36.698747,"lng":3.176711,"contact":""},
+{"id":"ZI-369","nom":"NUMILOG","zone":"Oued Smar","commune":"Oued Smar","nature":"Privé","forme":"","statut":"","branche":"Transports-Logistique","activite":"Logistique / transport","affectation":"","annee":2007,"superficie":21419,"employes":null,"adresse":"Oued Smar","lat":36.705303,"lng":3.192653,"contact":""},
+{"id":"ZI-370","nom":"Nova trailer","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Mécanique-Electromécanique","activite":"industrie mécanique / fabrication de remorques","affectation":"","annee":2016,"superficie":8834,"employes":null,"adresse":"Lot 88 A - Z.I, Oued Smar","lat":36.696439,"lng":3.186906,"contact":""},
+{"id":"ZI-372","nom":"Polystyrène Sofatpo","zone":"Oued Smar","commune":"Oued Smar","nature":"publique","forme":"publique","statut":"","branche":"Plastique-Caoutchouc","activite":"Production de polystyrène, emballages plastiques","affectation":"","annee":2006,"superficie":11031,"employes":null,"adresse":"Oued Smar","lat":36.696111,"lng":3.18835,"contact":""},
+{"id":"ZI-373","nom":"SAPTA","zone":"Oued Smar","commune":"Oued Smar","nature":"SPA","forme":"","statut":"","branche":"Transports-Logistique","activite":"Transport","affectation":"","annee":1973,"superficie":11654,"employes":null,"adresse":"Oued Smar","lat":36.701825,"lng":3.185286,"contact":""},
+{"id":"ZI-374","nom":"SARL EAPI","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Bois-Papier-Carton-Imprimerie","activite":"transformation de papier, l'impression et fabrication d'articles de papeterie","affectation":"","annee":1994,"superficie":2467,"employes":null,"adresse":"Oued Smar","lat":36.702589,"lng":3.196469,"contact":""},
+{"id":"ZI-378","nom":"SARL FMMINDUSTRY","zone":"Oued Smar","commune":"Oued Smar","nature":"SARL","forme":"SARL","statut":"","branche":"Industrie","activite":"Fabrication de détendeurs de gaz","affectation":"","annee":2021,"superficie":4319,"employes":null,"adresse":"Zone Industrielle Lot N°139 Oued Smar","lat":36.697406,"lng":3.176714,"contact":""},
+{"id":"ZI-381","nom":"SARL GMP","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Bois-Papier-Carton-Imprimerie","activite":"étiquettes adhésives et matériel de marquage","affectation":"","annee":1991,"superficie":3307,"employes":null,"adresse":"Zone industrielle Oued Smar","lat":36.695933,"lng":3.177892,"contact":""},
+{"id":"ZI-387","nom":"SEIGNEURIE PEINTURES ET DÉCO","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Chimie-Parachimie","activite":"Vente de peintures décoratives et industrielles","affectation":"","annee":1880,"superficie":4072,"employes":null,"adresse":"Oued Smar","lat":36.705578,"lng":3.195456,"contact":""},
+{"id":"ZI-389","nom":"SILOMETAL","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"Transformation et fabrication métallique","affectation":"","annee":2014,"superficie":4880,"employes":null,"adresse":"Oued Smar","lat":36.698439,"lng":3.178642,"contact":""},
+{"id":"ZI-392","nom":"SNC METAL SPA","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"construction métallique et la chaudronnerie","affectation":"","annee":1983,"superficie":1476,"employes":null,"adresse":"route de meftah BP88, Oued Smar","lat":36.698319,"lng":3.1798,"contact":""},
+{"id":"ZI-393","nom":"SNIM STEEL SPA","zone":"Oued Smar","commune":"Oued Smar","nature":"EPE","forme":"EPE","statut":"","branche":"Métallurgie-Sidérurgie-Travail du métal","activite":"Industrie lourde / métallurgie","affectation":"","annee":1947,"superficie":14023,"employes":null,"adresse":"Zone Industrielle de Oued-Smar BP 10","lat":36.700239,"lng":3.190089,"contact":""},
+{"id":"ZI-394","nom":"SNTP UNITÉ DE PRODUCTION","zone":"Oued Smar","commune":"Oued Smar","nature":"public","forme":"public","statut":"","branche":"BTPH-Matériaux de construction-ginie civile","activite":"Matériaux de construction (Fabrication)","affectation":"","annee":1977,"superficie":329,"employes":null,"adresse":"Oued Smar","lat":36.704628,"lng":3.187208,"contact":""},
+{"id":"ZI-395","nom":"SOALTIM","zone":"Oued Smar","commune":"Oued Smar","nature":"SPA","forme":"","statut":"","branche":"Commerce-Négoce-Distribution","activite":"Commerce / distribution","affectation":"","annee":1969,"superficie":10693,"employes":null,"adresse":"Oued Smar","lat":36.704033,"lng":3.188028,"contact":""},
+{"id":"ZI-396","nom":"SPA DIMED PHARMA","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Pharmédical/Pharmacie","activite":"production, importation et distribution de produits pharmaceutiques","affectation":"","annee":1997,"superficie":5017,"employes":null,"adresse":"Oued Smar","lat":36.709144,"lng":3.202111,"contact":""},
+{"id":"ZI-404","nom":"Sarl Palma packaging","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Plastique-Caoutchouc","activite":"Fabrication d'emballages plastiques (PET)","affectation":"","annee":null,"superficie":7424,"employes":null,"adresse":"Oued Smar","lat":36.705533,"lng":3.193417,"contact":""},
+{"id":"ZI-407","nom":"Sarl ahras industry","zone":"Oued Smar","commune":"Oued Smar","nature":"SARL","forme":"SARL","statut":"","branche":"Commerce-Négoce-Distribution","activite":"importation, vente et distribution d'équipements de protection individuelle","affectation":"","annee":2004,"superficie":4846,"employes":null,"adresse":"Haouch Saliba, Oued Smar","lat":36.701511,"lng":3.192961,"contact":""},
+{"id":"ZI-409","nom":"Sarl hontai","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Électronique-Électricité","activite":"fabrication, production et distribution d'électricité","affectation":"","annee":null,"superficie":4805,"employes":null,"adresse":"n°71, zone industrielle, Oued Smar","lat":36.703078,"lng":3.182075,"contact":""},
+{"id":"ZI-410","nom":"Solar Turbines","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Energie","activite":"fabrication de turbines à gaz industrielles","affectation":"","annee":1927,"superficie":5026,"employes":null,"adresse":"Oued Smar","lat":36.71025,"lng":3.204156,"contact":""},
+{"id":"ZI-412","nom":"Sonatrach - base logistique","zone":"Oued Smar","commune":"Oued Smar","nature":"étatique","forme":"étatique","statut":"","branche":"Energie","activite":"Soutien logistique, gestion des équipements, et maintenance","affectation":"","annee":1963,"superficie":22206,"employes":null,"adresse":"Zone Industrielle Oued Smar, Voie N°10, BP 108","lat":36.69795,"lng":3.164758,"contact":""},
+{"id":"ZI-413","nom":"Starbrands Spa","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Commerce-Négoce-Distribution","activite":"distribution de biens de grande consommation","affectation":"","annee":2003,"superficie":7534,"employes":null,"adresse":"Oued Smar","lat":36.697525,"lng":3.188919,"contact":""},
+{"id":"ZI-415","nom":"Stellantis El Djazair","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Mécanique-Electromécanique","activite":"production, assemblage et commercialisation de véhicules","affectation":"","annee":2023,"superficie":2122,"employes":null,"adresse":"Oued Smar","lat":36.709722,"lng":3.203525,"contact":""},
+{"id":"ZI-416","nom":"UNITE D9","zone":"Oued Smar","commune":"Oued Smar","nature":"SARL","forme":"SARL","statut":"","branche":"Chimie-Parachimie","activite":"Peinture + décoration + revêtement bâtiment","affectation":"","annee":null,"superficie":13209,"employes":null,"adresse":"Oued Smar","lat":36.706394,"lng":3.194461,"contact":""},
+{"id":"ZI-417","nom":"usine de sachet netcom","zone":"Oued Smar","commune":"Oued Smar","nature":"privée","forme":"privée","statut":"","branche":"Plastique-Caoutchouc","activite":"Fabrication de sachets plastiques","affectation":"","annee":1995,"superficie":2371,"employes":null,"adresse":"Oued Smar","lat":36.698233,"lng":3.193378,"contact":""}
+];
+
+const DATA = RAW_DATA.map(d => {
+  let lat = d.lat, lng = d.lng;
+  if ((!lat || !lng) && d.dms) { lat = parseDMS(d.dms); lng = parseDMSLng(d.dms); }
+  return { ...d, lat: lat||null, lng: lng||null, icone: getIcon(d.branche||d.activite), couleur: ZONE_COLORS[d.zone]||'#00c8ff', statut: normalizeStatut(d.statut)||'Non précisé', hasCoords: !!(lat&&lng) };
+});
+
+let filteredData=[...DATA], activeItem=null, markers=[], map, zoneFilter='all', activityFilter='all';
+
+function toast(msg,dur=3000){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),dur);}
+function toggleTheme(){const h=document.documentElement,c=h.getAttribute('data-theme'),n=c==='dark'?'light':'dark';h.setAttribute('data-theme',n);try{localStorage.setItem('induspacial-theme',n);}catch(e){}if(map)map.invalidateSize();}
+try{const s=localStorage.getItem('induspacial-theme');if(s)document.documentElement.setAttribute('data-theme',s);}catch(e){}
+
+function initMap(){
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([36.715,3.26],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:''}).addTo(map);
+  map.on('mousemove',e=>{document.getElementById('coords').textContent=`${e.latlng.lat.toFixed(5)}° N · ${e.latlng.lng.toFixed(5)}° E · ALGER, ALGÉRIE`;});
+}
+
+function createMarker(item){
+  if(!item.lat||!item.lng)return null;
+  const c=item.couleur;
+  const icon=L.divIcon({className:'',iconSize:[36,36],iconAnchor:[18,18],popupAnchor:[0,-20],
+    html:`<div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><div class="pulse-ring" style="--ring-color:${c}88;--ring-dur:3s;"></div><div style="width:30px;height:30px;background:var(--panel);border:2px solid ${c};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 10px ${c}66;position:relative;z-index:1;">${item.icone}</div></div>`
+  });
+  const m=L.marker([item.lat,item.lng],{icon}).addTo(map);
+  m.bindPopup(`<div style="min-width:220px;"><div class="popup-name">${item.nom}</div><div class="popup-type" style="color:${c}">${item.zone||''} · ${item.branche||item.activite||'—'}</div><div class="popup-stat"><span class="popup-stat-k">STATUT</span><span class="popup-stat-v">${item.statut||'—'}</span></div>${item.forme?`<div class="popup-stat"><span class="popup-stat-k">FORME</span><span class="popup-stat-v">${item.forme}</span></div>`:''} ${item.superficie?`<div class="popup-stat"><span class="popup-stat-k">SUPERFICIE</span><span class="popup-stat-v">${Number(item.superficie).toLocaleString()} m²</span></div>`:''} ${item.employes?`<div class="popup-stat"><span class="popup-stat-k">EMPLOYÉS</span><span class="popup-stat-v">${Number(item.employes).toLocaleString()}</span></div>`:''} ${item.contact?`<div class="popup-stat"><span class="popup-stat-k">CONTACT</span><span class="popup-stat-v">${item.contact}</span></div>`:''}</div>`,{maxWidth:280});
+  m.on('click',()=>selectItem(item));
+  return m;
+}
+
+function renderMarkers(){markers.forEach(m=>m&&map.removeLayer(m));markers=[];filteredData.forEach(item=>{markers.push(createMarker(item));});}
+
+function updateCounts(){
+  document.getElementById('cnt-all').textContent=DATA.length+' unités';
+  document.getElementById('cnt-rouiba').textContent=DATA.filter(d=>d.zone==='Rouiba').length+' unités';
+  document.getElementById('cnt-reghaia').textContent=DATA.filter(d=>d.zone==='Reghaia').length+' unités';
+  document.getElementById('cnt-ouedSmar').textContent=DATA.filter(d=>d.zone==='Oued Smar').length+' unités';
+}
+
+function renderList(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const list=document.getElementById('zone-list');
+  const visData=DATA.filter(d=>{
+    const zOk=zoneFilter==='all'||d.zone===zoneFilter;
+    const aOk=activityFilter==='all'||d.branche===activityFilter;
+    const qOk=!q||d.nom.toLowerCase().includes(q)||(d.branche||'').toLowerCase().includes(q)||(d.activite||'').toLowerCase().includes(q)||(d.commune||'').toLowerCase().includes(q)||d.id.toLowerCase().includes(q);
+    return zOk&&aOk&&qOk;
+  });
+  filteredData=visData; renderMarkers();
+  list.innerHTML='';
+  if(!visData.length){list.innerHTML='<div style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">AUCUNE UNITÉ TROUVÉE</div>';return;}
+  visData.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='zone-item'+(activeItem&&activeItem.id===item.id?' active':'');
+    div.style.setProperty('--item-color',item.couleur);
+    div.style.animationDelay=Math.min(i*20,400)+'ms';
+    const sc=item.statut==='En activité'?'var(--green)':item.statut==='En instance'||item.statut==='En projet'?'var(--gold)':item.statut==='En arrêt'||item.statut==='En justice'?'var(--red)':'var(--muted)';
+    div.innerHTML=`<div class="zi-top"><span class="zi-id">${item.id}</span><span style="font-size:13px;">${item.icone}</span><span class="zi-name" title="${item.nom}">${item.nom}</span></div><div class="zi-bottom"><span class="zi-commune">${item.zone||item.commune}</span>${item.branche?`<span class="zi-activity">· ${item.branche}</span>`:''} ${item.statut!=='Non précisé'?`<span class="zi-statut" style="background:${sc}22;border:1px solid ${sc};color:${sc};margin-left:auto;">${item.statut}</span>`:''}</div>`;
+    div.onclick=()=>selectItem(item);
+    list.appendChild(div);
+  });
+  updateTicker(visData.length);
+}
+
+function selectItem(item){
+  activeItem=item;
+  document.querySelectorAll('.zone-item').forEach(el=>el.classList.remove('active'));
+  const idx=filteredData.indexOf(item);
+  const els=document.querySelectorAll('.zone-item');
+  if(els[idx]){els[idx].classList.add('active');els[idx].scrollIntoView({behavior:'smooth',block:'nearest'});}
+  if(item.lat&&item.lng){map.flyTo([item.lat,item.lng],15,{duration:1.0});if(markers[idx])markers[idx].openPopup();}
+  renderDetail(item); drawChart(item);
+}
+
+function renderDetail(item){
+  const card=document.getElementById('detail-card');
+  const sc=item.statut==='En activité'?'var(--green)':item.statut==='En arrêt'||item.statut==='En justice'?'var(--red)':'var(--gold)';
+  const rows=[];
+  const addRow=(key,val,extra='')=>{if(val==null||val===''||val==='Non précisé'||val==='null')return;rows.push(`<div class="detail-row"><span class="detail-key">${key}</span><span class="detail-val${extra}">${val}</span></div>`);};
+  addRow('ID',item.id); addRow('COMMUNE',item.commune); addRow('ZONE',item.zone);
+  addRow('NATURE',item.nature); addRow('FORME JUR.',item.forme); addRow('AFFECTATION',item.affectation);
+  if(item.annee)addRow('CRÉATION',item.annee);
+  if(item.superficie)addRow('SUPERFICIE',Number(item.superficie).toLocaleString()+' m²',' highlight');
+  if(item.employes)addRow('EMPLOYÉS',Number(item.employes).toLocaleString(),' highlight');
+  if(item.adresse)addRow('ADRESSE',item.adresse);
+  if(item.contact){const isEmail=item.contact.includes('@');addRow('CONTACT',isEmail?`<a href="mailto:${item.contact}">${item.contact}</a>`:item.contact);}
+  if(item.lat&&item.lng)addRow('GPS',`${item.lat.toFixed(5)}° N, ${item.lng.toFixed(5)}° E`);
+  card.innerHTML=`<div style="margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;"><span style="font-size:28px;flex-shrink:0;">${item.icone}</span><div style="flex:1;min-width:0;"><div class="detail-zone-name">${item.nom}</div><div class="detail-zone-type" style="--type-color:${item.couleur}">${item.zone}</div></div></div>${item.statut!=='Non précisé'?`<div style="margin-bottom:8px;"><span class="statut-badge" style="background:${sc}22;border:1px solid ${sc};color:${sc};">${item.statut}</span></div>`:''}<div class="detail-divider"></div>${rows.join('')}${item.branche||item.activite?`<div class="detail-divider"></div>${item.branche?`<div class="detail-row"><span class="detail-key">BRANCHE</span><span class="detail-val">${item.branche}</span></div>`:''} ${item.activite?`<div class="detail-desc">${item.activite}</div>`:''}`:''} `;
+}
+
+function drawChart(item){
+  const canvas=document.getElementById('radarCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||260, H=120;
+  canvas.width=W; canvas.height=H; ctx.clearRect(0,0,W,H);
+  const isDark=document.documentElement.getAttribute('data-theme')!=='light';
+  const tc=isDark?'#4a6282':'#7a93ad';
+  const maxSup=Math.max(...DATA.map(d=>d.superficie||0));
+  const maxEmp=Math.max(...DATA.map(d=>d.employes||0));
+  const bars=[
+    {label:'SURFACE',val:maxSup>0?(item.superficie||0)/maxSup:0,color:'#E85D04'},
+    {label:'EMPLOIS',val:maxEmp>0?(item.employes||0)/maxEmp:0,color:'#00c8ff'},
+    {label:'ANCIENNETÉ',val:item.annee?Math.min((2025-item.annee)/80,1):0,color:'#00e676'},
+    {label:'GPS',val:item.hasCoords?1:0,color:'#f0b429'},
+  ];
+  const pad=10, bW=(W-pad*2)/bars.length-8;
+  bars.forEach((b,i)=>{
+    const x=pad+i*(bW+8), maxH=H-34, bH=Math.max(b.val*maxH,2), y=H-20-bH;
+    ctx.fillStyle=isDark?'rgba(255,255,255,.04)':'rgba(0,0,0,.06)'; ctx.fillRect(x,H-20-maxH,bW,maxH);
+    const grad=ctx.createLinearGradient(0,y,0,H-20); grad.addColorStop(0,b.color); grad.addColorStop(1,b.color+'33');
+    ctx.fillStyle=grad; ctx.fillRect(x,y,bW,bH);
+    ctx.fillStyle=b.color; ctx.fillRect(x,y,bW,2);
+    ctx.fillStyle=tc; ctx.font='7px Share Tech Mono'; ctx.textAlign='center'; ctx.fillText(b.label,x+bW/2,H-5);
+    ctx.fillStyle=b.color; ctx.font='bold 8px Rajdhani'; ctx.fillText(Math.round(b.val*100)+'%',x+bW/2,y-4);
+  });
+}
+
+function setZoneFilter(btn,zone){
+  zoneFilter=zone;
+  document.querySelectorAll('.zone-badge').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); activityFilter='all'; buildActivityChips(); renderList();
+  const centers={Rouiba:[36.728,3.295],Reghaia:[36.726,3.329],'Oued Smar':[36.702,3.185],all:[36.715,3.26]};
+  const zooms={Rouiba:13,Reghaia:13,'Oued Smar':13,all:12};
+  map.flyTo(centers[zone],zooms[zone],{duration:1.2});
+}
+
+function buildActivityChips(){
+  const zd=zoneFilter==='all'?DATA:DATA.filter(d=>d.zone===zoneFilter);
+  const acts=[...new Set(zd.map(d=>d.branche).filter(Boolean))].sort();
+  const fc=document.getElementById('filter-chips');
+  fc.innerHTML=`<button class="chip ${activityFilter==='all'?'active':''}" onclick="setActivityFilter(this,'all')">TOUTES</button>`;
+  acts.forEach(a=>{
+    const btn=document.createElement('button');
+    btn.className='chip'+(activityFilter===a?' active':'');
+    btn.textContent=a.replace('BTPH-Matériaux de construction-ginie civile','BTPH').replace('Mécanique-Electromécanique','MÉCA-ÉLEC').replace('Métallurgie-Sidérurgie-Travail du métal','MÉTAL').replace('Bois-Papier-Carton-Imprimerie','PAPIER').replace('Commerce-Négoce-Distribution','COMMERCE').replace('Pharmédical/Pharmacie','PHARMACIE').replace('Plastique-Caoutchouc','PLASTIQUE').replace('Chimie-Parachimie','CHIMIE').slice(0,16);
+    btn.title=a; btn.onclick=function(){setActivityFilter(this,a);}; fc.appendChild(btn);
+  });
+}
+
+function setActivityFilter(btn,activity){
+  activityFilter=activity;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active'); renderList();
+}
+
+function buildLegend(){
+  const li=document.getElementById('legend-items'); li.innerHTML='';
+  Object.entries(ZONE_COLORS).forEach(([zone,color])=>{
+    const count=DATA.filter(d=>d.zone===zone).length;
+    const d=document.createElement('div'); d.className='leg-item';
+    d.innerHTML=`<div class="leg-dot" style="background:${color};box-shadow:0 0 5px ${color}88;"></div><div class="leg-label">${zone} <span style="color:var(--muted)">(${count})</span></div>`;
+    d.onclick=()=>{const b=document.getElementById('badge-'+(zone==='Oued Smar'?'ouedSmar':zone.toLowerCase().replace('ï','i').replace(/[éèê]/g,'e')));if(b)b.click();};
+    li.appendChild(d);
+  });
+}
+
+function updateTicker(count){
+  const total=count!=null?count:DATA.length;
+  const r=DATA.filter(d=>d.zone==='Rouiba').length, rg=DATA.filter(d=>d.zone==='Reghaia').length, os=DATA.filter(d=>d.zone==='Oued Smar').length;
+  const wc=DATA.filter(d=>d.hasCoords).length;
+  const base=`INDUSPACIAL &nbsp;·&nbsp; ${total} UNITÉS AFFICHÉES &nbsp;·&nbsp; ROUIBA: ${r} · REGHAÏA: ${rg} · OUED SMAR: ${os} &nbsp;·&nbsp; ${wc} LOCALISÉES SUR CARTE &nbsp;·&nbsp; WILAYA D'ALGER · ALGÉRIE &nbsp;·&nbsp; `;
+  document.getElementById('ticker-text').innerHTML=base+base;
+}
+
+function setLoad(pct,txt){document.getElementById('load-fill').style.width=pct+'%';document.getElementById('load-text').textContent=txt;}
+
+async function boot(){
+  setLoad(20,'INITIALISATION DE LA CARTE...');
+  await new Promise(r=>setTimeout(r,200)); initMap();
+  setLoad(50,'CHARGEMENT DES DONNÉES...');
+  await new Promise(r=>setTimeout(r,200)); updateCounts(); buildActivityChips(); buildLegend();
+  setLoad(80,"RENDU DE L'INTERFACE...");
+  await new Promise(r=>setTimeout(r,200)); renderList();
+  setLoad(100,`✓ ${DATA.length} UNITÉS CHARGÉES`);
+  await new Promise(r=>setTimeout(r,500));
+  const l=document.getElementById('loading'); l.style.opacity='0'; l.style.transition='opacity .4s';
+  setTimeout(()=>l.style.display='none',400);
+  toast(`🏭 INDUSPACIAL · ${DATA.length} UNITÉS · ${DATA.filter(d=>d.hasCoords).length} LOCALISÉES`);
+  setTimeout(()=>{const first=DATA.find(d=>d.hasCoords);if(first)selectItem(first);},900);
+}
+boot();
+</script>
+</body>
+</html>
