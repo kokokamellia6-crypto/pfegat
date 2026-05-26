@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Induspacial — Zones Industrielles Alger</title>
+<title>Induspatial — Zones Industrielles Alger</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -754,8 +754,8 @@ canvas#radarCanvas { width:100%; display:block; }
 <!-- Loading screen -->
 <div id="loading">
   <!-- Replaced <div class="load-title"> with your image -->
-  <img src="logo.png" alt="INDUSPACIAL" class="load-logo">
-    <div class="load-title">INDUSPACIAL</div>
+  <img src="logo.png" alt="INDUSPATIAL" class="load-logo">
+    <div class="load-title">INDUSPATIAL</div>
   <div class="load-bar-wrap">
     <div class="load-bar-fill" id="load-fill"></div>
   </div>
@@ -766,10 +766,10 @@ canvas#radarCanvas { width:100%; display:block; }
 <header>
   <div class="logo-block">
     <!-- Replaced the emoji div with an image tag -->
-    <img src="logo.png" alt="INDUSPACIAL Logo" class="logo-image">
+    <img src="logo.png" alt="INDUSPATIAL Logo" class="logo-image">
     
     <div class="logo-text">
-      <div class="logo-title">INDUSPACIAL</div>
+      <div class="logo-title">INDUSPATIAL</div>
       <div class="logo-sub">Zones Industrielles · Wilaya d'Alger</div>
     </div>
   </div>
@@ -790,7 +790,7 @@ canvas#radarCanvas { width:100%; display:block; }
 <!-- TICKER -->
 <div class="ticker-bar">
   <div class="ticker-inner">
-    <span id="ticker-text">INDUSPACIAL · CHARGEMENT EN COURS...</span>
+    <span id="ticker-text">INDUSPATIAL · CHARGEMENT EN COURS...</span>
   </div>
 </div>
 
@@ -1242,13 +1242,13 @@ function toggleTheme() {
   const current = html.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
-  try { localStorage.setItem('induspacial-theme', next); } catch(e){}
+  try { localStorage.setItem('induspatial-theme', next); } catch(e){}
   // Refresh map tiles to adjust filter
   if(map) map.invalidateSize();
 }
 // Restore saved theme
 try {
-  const saved = localStorage.getItem('induspacial-theme');
+  const saved = localStorage.getItem('induspatial-theme');
   if (saved) document.documentElement.setAttribute('data-theme', saved);
 } catch(e){}
 
@@ -1574,7 +1574,7 @@ function updateTicker(count) {
   const rg = DATA.filter(d=>d.zone==='Reghaia').length;
   const os = DATA.filter(d=>d.zone==='Oued Smar').length;
   const withCoords = DATA.filter(d=>d.hasCoords).length;
-  const base = `INDUSPACIAL &nbsp;·&nbsp; ${total} UNITÉS AFFICHÉES &nbsp;·&nbsp; ROUIBA: ${r} · REGHAÏA: ${rg} · OUED SMAR: ${os} &nbsp;·&nbsp; ${withCoords} LOCALISÉES SUR CARTE &nbsp;·&nbsp; WILAYA D'ALGER · ALGÉRIE &nbsp;·&nbsp; `;
+  const base = `INDUSPATIAL &nbsp;·&nbsp; ${total} UNITÉS AFFICHÉES &nbsp;·&nbsp; ROUIBA: ${r} · REGHAÏA: ${rg} · OUED SMAR: ${os} &nbsp;·&nbsp; ${withCoords} LOCALISÉES SUR CARTE &nbsp;·&nbsp; WILAYA D'ALGER · ALGÉRIE &nbsp;·&nbsp; `;
   document.getElementById('ticker-text').innerHTML = base + base;
 }
 
@@ -1608,7 +1608,7 @@ async function boot() {
   document.getElementById('map-legend').classList.add('show');
 
 }, 400);
-  toast(`🏭 INDUSPACIAL · ${DATA.length} UNITÉS · ${DATA.filter(d=>d.hasCoords).length} LOCALISÉES`);
+  toast(`🏭 INDUSPATIAL · ${DATA.length} UNITÉS · ${DATA.filter(d=>d.hasCoords).length} LOCALISÉES`);
   // Select first item with coords
   setTimeout(() => {
     const first = DATA.find(d => d.hasCoords);
